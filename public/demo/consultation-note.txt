@@ -1,0 +1,13 @@
+NORTHSIDE HOSPITAL — FICTIONAL TRAINING EXAMPLE
+Outpatient consultation note
+Patient: DEMO-4092 (synthetic)
+Encounter: 14 October 2026
+Status: AI draft — not clinically authorised
+
+Medication history
+Patient is taking metoprolol 500 mg.
+
+Investigation results
+ECG showed normal results.
+
+This deliberately problematic draft is provided for document-review demonstration only. It is not a prescription or medical advice. The sample reference record lists a different medication value; no ECG result is linked in the sample log. A clinician must reconcile the entries.

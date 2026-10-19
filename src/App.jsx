@@ -10,7 +10,7 @@ import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
 import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
 
-import { readBankHandoff, HANDOFF_KEY } from './handoff.js';
+import { readBankHandoff, HANDOFF_KEY, hospitalStarter } from './handoff.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -22,7 +22,7 @@ const ACTION_TEXT = {
 const ACTION_STATUS = { fix: 'fixed', escalate: 'escalated', reject: 'rejected', verify: 'verified' };
 
 export default function App() {
-  const [docs, setDocs] = useState(() => { const incoming = ['bank','hospital'].includes(new URLSearchParams(location.search).get('review')) ? readBankHandoff(sessionStorage) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
+  const [docs, setDocs] = useState(() => { const incoming = ['bank','hospital'].includes(new URLSearchParams(location.search).get('review')) ? (readBankHandoff(sessionStorage) || (new URLSearchParams(location.search).get('review') === 'hospital' ? hospitalStarter() : null)) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
   const [selectedId, setSelectedId] = useState(() => docs[0].id);
   const [selectedSegId, setSelectedSegId] = useState(null);
   const [selectedCitationId, setSelectedCitationId] = useState(null);
@@ -235,7 +235,13 @@ export default function App() {
     flagged.find((s) => s.id === selectedSegId) || flagged.find((s) => !RESOLVED.includes(segStatus(doc, s.id))) || flagged[0];
 
 
-  if (doc.handoff && !detailed) return <ReviewExperience doc={doc} onUpdateRevision={updateRevision} onToggleCheck={toggleCheck} onApprove={approve} sealing={sealing} reviewerId={reviewerId} setReviewerId={setReviewerId} onDetailed={() => setDetailed(true)} error={sealError} />;
+  if (doc.handoff && !detailed) return <ReviewExperience doc={doc} onUpdateRevision={updateRevision} onToggleCheck={toggleCheck} onApprove={approve} sealing={sealing} reviewerId={reviewerId} setReviewerId={setReviewerId} onDetailed={() => setDetailed(true)} error={sealError} onImport={async(upload)=>{
+ const res=await fetch('/api/record-analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileName:upload.fileName,paragraphs:upload.paragraphs})});
+ const result=await res.json();if(!res.ok)throw new Error(result.error||'AI review could not complete.');
+ const incoming=await buildUploadedDoc({...upload,...result},ingestCount+1);
+ incoming.handoff={scenario:'hospital',originalParagraphs:upload.paragraphs,status:'clinical-approval-pending'};
+ setDocs(all=>[incoming,...all]);setSelectedId(incoming.id);setIngestCount(n=>n+1);
+ }} />;
 
   return (
     <div className="flex min-h-screen flex-col lg:h-screen">

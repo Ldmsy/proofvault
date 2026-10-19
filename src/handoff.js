@@ -19,3 +19,8 @@ export function readBankHandoff(storage) {
     return doc;
   } catch {return null;}
 }
+
+export function hospitalStarter() {
+ const packet={version:1,scenario:'hospital',id:'hospital-review-starter',createdAt:new Date().toISOString(),paragraphs:['Patient is taking metoprolol 500 mg.','ECG showed normal results.'],report:{claims:[]}};
+ return readBankHandoff({getItem:key=>key===HANDOFF_KEY?JSON.stringify(packet):null});
+}
