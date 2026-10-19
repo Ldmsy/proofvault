@@ -188,10 +188,48 @@ function checkSentence(sentence) {
   return findings;
 }
 
+/* ───────────── Grounding report (查真): share of the text that is grounded, ungrounded or in conflict ───────────── */
+
+const CONFLICT = new Set(['number_mismatch', 'altered', 'superseded', 'anachronism']);
+const UNGROUNDED = new Set(['not_found', 'unlinked_result', 'unsourced']);
+
+function shingles(s) {
+  const w = norm(s).replace(/[^a-z0-9\s]/g, ' ').split(' ').filter(Boolean);
+  const out = new Set();
+  for (let i = 0; i + 2 < w.length; i++) out.add(w.slice(i, i + 3).join(' '));
+  return out;
+}
+
+// Word 3-gram containment against every registered record, like a similarity checker.
+function similarRecord(sentence) {
+  const A = shingles(sentence);
+  if (!A.size) return null;
+  let best = null;
+  for (const d of DOCUMENTS) {
+    const B = shingles(d.text);
+    let hit = 0;
+    A.forEach((x) => B.has(x) && hit++);
+    const score = hit / A.size;
+    if (!best || score > best.score) best = { id: d.id, score };
+  }
+  return best && best.score >= 0.3 ? best : null;
+}
+
+function groundSentence(sentence, findings) {
+  const conflict = findings.find((f) => CONFLICT.has(f.verdict));
+  if (conflict) return { status: 'conflict', sourceId: conflict.sourceId ?? null };
+  if (findings.some((f) => UNGROUNDED.has(f.verdict))) return { status: 'ungrounded', sourceId: null };
+  const match = findings.find((f) => f.verdict === 'match' && f.sourceId);
+  const sim = similarRecord(sentence);
+  if (match) return { status: 'grounded', sourceId: match.sourceId, similarity: sim?.score ?? null };
+  if (sim) return { status: 'grounded', sourceId: sim.id, similarity: sim.score };
+  return { status: 'ungrounded', sourceId: null, reason: 'no supporting record' };
+}
+
 export function checkText(text) {
-  const findings = splitSentences(text).flatMap(checkSentence);
+  const sentences = splitSentences(text).map((s) => ({ text: s, findings: checkSentence(s) }));
   const seen = new Set();
-  const unique = findings.filter((f) => {
+  const unique = sentences.flatMap((x) => x.findings).filter((f) => {
     const k = `${f.verdict}|${f.claim}|${f.sentence}`;
     if (seen.has(k)) return false;
     seen.add(k);
@@ -200,7 +238,21 @@ export function checkText(text) {
   const claims = unique.map((f, i) => ({ id: `f${i + 1}`, ...f, label: VERDICTS[f.verdict].label, ok: VERDICTS[f.verdict].ok, principle: VERDICTS[f.verdict].principle }));
   const summary = { total: claims.length, ok: claims.filter((c) => c.ok).length, problems: claims.filter((c) => !c.ok).length, byVerdict: {} };
   claims.forEach((c) => (summary.byVerdict[c.verdict] = (summary.byVerdict[c.verdict] || 0) + 1));
-  return { claims, summary, register: { documents: DOCUMENTS.length, agencies: AGENCIES.length, facts: FACTS.length } };
+
+  // Character-weighted percentages, the way a similarity report counts.
+  const graded = sentences.map((x) => ({ text: x.text, ...groundSentence(x.text, x.findings) }));
+  const total = graded.reduce((n, x) => n + x.text.length, 0) || 1;
+  const share = (st) => Math.round((graded.filter((x) => x.status === st).reduce((n, x) => n + x.text.length, 0) / total) * 100);
+  const grounded = share('grounded');
+  const conflict = share('conflict');
+  const sources = {};
+  graded.filter((x) => x.status === 'grounded' && x.sourceId).forEach((x) => (sources[x.sourceId] = (sources[x.sourceId] || 0) + x.text.length));
+  const grounding = {
+    percent: { grounded, conflict, ungrounded: Math.max(0, 100 - grounded - conflict) },
+    sentences: graded,
+    sources: Object.entries(sources).map(([id, n]) => ({ id, title: DOCUMENTS.find((d) => d.id === id)?.title ?? id, percent: Math.round((n / total) * 100) })),
+  };
+  return { grounding, claims, summary, register: { documents: DOCUMENTS.length, agencies: AGENCIES.length, facts: FACTS.length } };
 }
 
 // Optional: let Claude rewrite implicit claims into explicit, checkable sentences

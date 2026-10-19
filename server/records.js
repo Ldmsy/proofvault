@@ -65,6 +65,22 @@ export const DOCUMENTS = [
     text: '§2.1 Exfiltration cannot be ruled out; approximately 12.4k customer records are in scope. §3 Threat actor: undetermined.',
   },
   {
+    id: 'TRN-4092',
+    title: 'Consultation transcript, 14 Oct 2026',
+    issuer: 'Clinic',
+    date: '2026-10-14',
+    status: 'current',
+    text: 'Patient presented on 14 Oct 2026 reporting intermittent chest tightness on exertion over three weeks. We will refer for an exercise stress test and review in one week.',
+  },
+  {
+    id: 'INC-AUR-16',
+    title: 'Aurelia incident log',
+    issuer: 'Aurelia Financial Group',
+    date: '2026-10-16',
+    status: 'current',
+    text: 'Aurelia Financial Group identified a cyber security incident affecting a third-party file-transfer platform on 16 October 2026.',
+  },
+  {
     id: 'ACSC-MR-REG',
     title: 'ACSC media statements register (Oct 2026)',
     issuer: 'Australian Cyber Security Centre',
