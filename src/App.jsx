@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Info } from 'lucide-react';
+import ReviewExperience from './components/ReviewExperience.jsx';
 import Header from './components/Header.jsx';
 import Queue from './components/Queue.jsx';
 import Viewer from './components/Viewer.jsx';
@@ -8,6 +9,8 @@ import ProvenanceMapOverlay, { MiniProvenanceMap } from './components/Provenance
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
 import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
+
+import { readBankHandoff, HANDOFF_KEY } from './handoff.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -19,16 +22,18 @@ const ACTION_TEXT = {
 const ACTION_STATUS = { fix: 'fixed', escalate: 'escalated', reject: 'rejected', verify: 'verified' };
 
 export default function App() {
-  const [docs, setDocs] = useState(() => INITIAL_DOCS.map(prepareDoc));
-  const [selectedId, setSelectedId] = useState(INITIAL_DOCS[0].id);
+  const [docs, setDocs] = useState(() => { const incoming = ['bank','hospital'].includes(new URLSearchParams(location.search).get('review')) ? readBankHandoff(sessionStorage) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
+  const [selectedId, setSelectedId] = useState(() => docs[0].id);
   const [selectedSegId, setSelectedSegId] = useState(null);
   const [selectedCitationId, setSelectedCitationId] = useState(null);
   const [tab, setTab] = useState('audit');
   const [showDiff, setShowDiff] = useState(false);
   const [layers, setLayers] = useState({ misinfo: true, bias: true });
-  const [reviewerId, setReviewerId] = useState(REVIEWERS[0].id);
+  const [reviewerId, setReviewerId] = useState(() => docs[0].handoff?.scenario === 'hospital' ? 'r3' : REVIEWERS[0].id);
   const [modal, setModal] = useState(null); // 'ingest' | 'reject' | 'seal'
   const [sealing, setSealing] = useState(false);
+  const [detailed, setDetailed] = useState(false);
+  const [sealError, setSealError] = useState('');
   const [dark, setDark] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [ingestCount, setIngestCount] = useState(0);
@@ -42,6 +47,8 @@ export default function App() {
   }, [dark]);
 
   const doc = docs.find((d) => d.id === selectedId);
+  useEffect(() => { const incoming = docs.find(d => d.handoff); if (incoming) { try { sessionStorage.setItem(`${HANDOFF_KEY}.state`, JSON.stringify(incoming)); } catch { /* Session continuity unavailable; live state is retained. */ } } }, [docs]);
+
   const reviewer = REVIEWERS.find((r) => r.id === reviewerId);
 
   const toast = (text, tone = 'success') => {
@@ -147,6 +154,7 @@ export default function App() {
     });
 
   const approve = async () => {
+    setSealError('');
     setSealing(true);
     try {
       const sealedText = workingText(doc);
@@ -154,7 +162,7 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docId: doc.id, title: doc.title, text: sealedText,
           reviewer: { id: reviewer.id, name: reviewer.name, role: reviewer.role },
-          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist } }),
+          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist, checklistPurpose: doc.handoff ? 'Internal review acknowledgements; not compliance certification or release approval' : 'Reviewer checklist', originalText: doc.segments.map(s => s.text).join('\n'), reviewHistory: doc.audit, handoff: doc.handoff || null } }),
       });
       const entry = await res.json();
       if (!res.ok) throw new Error(entry.error || 'Could not seal record');
@@ -167,6 +175,7 @@ export default function App() {
       setSelectedId(doc.id);
       setModal('seal');
     } catch (err) {
+      setSealError(`Seal failed: ${err.message}`);
       toast(`Seal failed: ${err.message}`, 'info');
     } finally {
       setSealing(false);
@@ -226,6 +235,8 @@ export default function App() {
     flagged.find((s) => s.id === selectedSegId) || flagged.find((s) => !RESOLVED.includes(segStatus(doc, s.id))) || flagged[0];
 
 
+  if (doc.handoff && !detailed) return <ReviewExperience doc={doc} onUpdateRevision={updateRevision} onToggleCheck={toggleCheck} onApprove={approve} sealing={sealing} reviewerId={reviewerId} setReviewerId={setReviewerId} onDetailed={() => setDetailed(true)} error={sealError} />;
+
   return (
     <div className="flex min-h-screen flex-col lg:h-screen">
       <Header
@@ -235,6 +246,8 @@ export default function App() {
         onIngest={() => setModal('ingest')}
         onOpenMap={() => openMap()}
       />
+
+      {doc.handoff && <div className="border-b border-amber-500/40 bg-amber-100 px-5 py-3 text-sm text-slate-900"><strong>One file · {doc.id}</strong><div>Submitted → Source checked → Human review → {doc.seal ? 'Signed & archived' : 'Sign-off pending'} · Customer release approval remains separate.</div><div className="text-xs">Original draft and evidence travelled from the banking experience. Review each finding, edit or reject, complete IM Sign-off, then seal. Progress is saved in this browser tab only.</div><a href="/bank.html" className="underline">Back to scenario</a></div>}
 
       {/* ──────── Main Workspace: queue + mini map │ record │ audit panels ──────── */}
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_400px]">
