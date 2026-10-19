@@ -255,7 +255,7 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
           <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
             <Lock className="h-3.5 w-3.5" />
             {doc.seal
-              ? 'This record is sealed in the immutable archive. Content is read-only.'
+              ? 'This record is signed in the ProofCore ledger. Content is read-only in this interface.'
               : 'Returned to the AI system for regeneration. Re-open the review in the sign-off tab to continue.'}
           </div>
         )}
