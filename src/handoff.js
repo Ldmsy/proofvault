@@ -1,0 +1,20 @@
+import { INITIAL_DOCS } from './data.js';
+import { prepareDoc } from './lib.js';
+export const HANDOFF_KEY = 'proofvault.bank-review.v1';
+export function readBankHandoff(storage) {
+  try {
+    const packet = JSON.parse(storage.getItem(HANDOFF_KEY));
+    if (!packet || packet.version !== 1 || typeof packet.id !== 'string' || !packet.id.startsWith('bank-review-') || !Array.isArray(packet.paragraphs) || packet.paragraphs.length !== 2 || packet.paragraphs.some(p => typeof p !== 'string' || p.length > 4000) || !Array.isArray(packet.report?.claims)) return null;
+    const base = INITIAL_DOCS.find(d => d.id === 'doc-pr1016');
+    const evidence = packet.report.claims.filter(c => c.verdict !== 'match').map(c => c.evidence).join(' ');
+    const segments = packet.paragraphs.map((text, i) => ({id:`s${i+1}`,section:i?'Attributed endorsement':'Investigation scope',text,
+      revised:i?'The attributed endorsement has been removed pending source verification.':'Exfiltration cannot be ruled out; approximately 12.4k customer records are in scope. The investigation is ongoing.',
+      flag:{type:'misinfo',severity:'High',title:i?'Check the attributed endorsement':'Reconcile the investigation count',principle:'Claims must be supported by source records',standards:[],rationale:'Human review is required before this draft can be archived. No publication is authorised.',evidence,confidence:0}}));
+    const doc = prepareDoc({...base,id:packet.id,title:'Aurelia customer update — review draft',channel:'Banking experience → IM review',ingestedAt:packet.createdAt,owner:'Communications Lead · release approval pending',retention:'To be appraised by the records manager',segments,citations:[],c2pa:{...base.c2pa,manifest:'None — fictional scenario',model:'Deterministic source check; pre-authored suggested revisions',unsigned:true},handoff:{originalParagraphs:packet.paragraphs,report:packet.report,status:'release-approval-pending'}});
+    doc.audit=[{at:packet.createdAt,actor:'Banking scenario',text:'Submitted original draft and source-check report for human review. Fictional data; no customer message sent.'}];
+    // Only restore state written for this same tab and document. This is demo continuity, not authentication.
+    const saved=JSON.parse(storage.getItem(`${HANDOFF_KEY}.state`));
+    if(saved?.id===doc.id && saved.handoff && Array.isArray(saved.segments)) return saved;
+    return doc;
+  } catch {return null;}
+}

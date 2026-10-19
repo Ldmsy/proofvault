@@ -151,7 +151,7 @@ function checkSentence(sentence) {
       if (n.value === f.value) add('match', n.raw, { sourceId: f.sourceId, source: f.source, evidence: `${f.source}: ${f.value} ${f.unit}.` });
       else {
         const ratio = n.value / f.value;
-        const times = ratio >= 2 ? ` (${ratio.toFixed(ratio % 1 ? 1 : 0)}× the recorded value)` : ratio <= 0.5 ? ` (${ratio === 0.5 ? 'half' : `1/${(1 / ratio).toFixed(0)} of`} the recorded value)` : '';
+        const times = ratio === 0 ? ' (draft states zero)' : ratio >= 2 ? ` (${ratio.toFixed(ratio % 1 ? 1 : 0)}× the recorded value)` : ratio <= 0.5 ? ` (${ratio === 0.5 ? 'half' : `1/${(1 / ratio).toFixed(0)} of`} the recorded value)` : '';
         add('number_mismatch', n.raw, { sourceId: f.sourceId, source: f.source, evidence: `${f.source} records ${f.value} ${f.unit}${times}.` });
       }
     }

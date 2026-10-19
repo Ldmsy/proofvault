@@ -9,6 +9,8 @@ import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
 import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
 
+import { readBankHandoff, HANDOFF_KEY } from './handoff.js';
+
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
   escalate: 'Requested SME human review of',
@@ -19,8 +21,8 @@ const ACTION_TEXT = {
 const ACTION_STATUS = { fix: 'fixed', escalate: 'escalated', reject: 'rejected', verify: 'verified' };
 
 export default function App() {
-  const [docs, setDocs] = useState(() => INITIAL_DOCS.map(prepareDoc));
-  const [selectedId, setSelectedId] = useState(INITIAL_DOCS[0].id);
+  const [docs, setDocs] = useState(() => { const incoming = new URLSearchParams(location.search).get('review') === 'bank' ? readBankHandoff(sessionStorage) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
+  const [selectedId, setSelectedId] = useState(() => docs[0].id);
   const [selectedSegId, setSelectedSegId] = useState(null);
   const [selectedCitationId, setSelectedCitationId] = useState(null);
   const [tab, setTab] = useState('audit');
@@ -42,6 +44,8 @@ export default function App() {
   }, [dark]);
 
   const doc = docs.find((d) => d.id === selectedId);
+  useEffect(() => { const incoming = docs.find(d => d.handoff); if (incoming) { try { sessionStorage.setItem(`${HANDOFF_KEY}.state`, JSON.stringify(incoming)); } catch { /* Session continuity unavailable; live state is retained. */ } } }, [docs]);
+
   const reviewer = REVIEWERS.find((r) => r.id === reviewerId);
 
   const toast = (text, tone = 'success') => {
@@ -154,7 +158,7 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docId: doc.id, title: doc.title, text: sealedText,
           reviewer: { id: reviewer.id, name: reviewer.name, role: reviewer.role },
-          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist } }),
+          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist, originalText: doc.segments.map(s => s.text).join('\n'), reviewHistory: doc.audit, handoff: doc.handoff || null } }),
       });
       const entry = await res.json();
       if (!res.ok) throw new Error(entry.error || 'Could not seal record');
@@ -235,6 +239,8 @@ export default function App() {
         onIngest={() => setModal('ingest')}
         onOpenMap={() => openMap()}
       />
+
+      {doc.handoff && <div className="border-b border-amber-500/40 bg-amber-100 px-5 py-3 text-sm text-slate-900"><strong>One file · {doc.id}</strong><div>Submitted → Source checked → Human review → {doc.seal ? 'Signed & archived' : 'Sign-off pending'} · Customer release approval remains separate.</div><div className="text-xs">Original draft and evidence travelled from the banking experience. Review each finding, edit or reject, complete IM Sign-off, then seal. Progress is saved in this browser tab only.</div><a href="/bank.html" className="underline">Back to scenario</a></div>}
 
       {/* ──────── Main Workspace: queue + mini map │ record │ audit panels ──────── */}
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_400px]">
