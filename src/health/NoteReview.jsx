@@ -195,7 +195,7 @@ function IssuePanel({ note, seg, index, total, onDecide, onUndo, onAsk, onApplyA
           </div>
           {q?.reply && (
             <button onClick={() => onApplyAnswer(seg.id)} className="w-full rounded-xl bg-brand-yellow px-4 py-3 text-sm font-bold text-slate-950 shadow-[0_3px_0_#d5b800]">
-              Apply {author.name.split(' ').slice(-1)[0]}'s answer
+              Apply the doctor's answer
             </button>
           )}
           <div className="grid grid-cols-2 gap-2">
@@ -219,7 +219,7 @@ function IssuePanel({ note, seg, index, total, onDecide, onUndo, onAsk, onApplyA
               }}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40"
             >
-              <HelpCircle className="h-3.5 w-3.5" /> Ask {author.name.split(' ').slice(-1)[0]}
+              <HelpCircle className="h-3.5 w-3.5" /> Ask the doctor
             </button>
           </div>
           <button onClick={() => onDecide(seg.id, 'kept')} className="w-full text-center text-xs text-slate-500 hover:text-slate-900 hover:underline">

@@ -11,7 +11,7 @@ export const ME = {
 };
 
 export const CLINICIANS = {
-  okafor: { name: 'Dr Kim', role: 'GP Registrar, Outpatients' },
+  okafor: { name: 'Doctor', role: 'GP Registrar, Outpatients' },
   lindqvist: { name: 'Dr Erik Lindqvist', role: 'Consultant, General Medicine' },
   haddad: { name: 'Dr Samir Haddad', role: 'Emergency Physician' },
   wong: { name: 'Dr Mei Wong', role: 'Orthopaedic Registrar' },
@@ -58,7 +58,7 @@ export const NOTES = [
         revised: 'ECG ordered; result pending at time of documentation. A cardiac cause has not been excluded.',
         flag: { type: 'misinfo', severity: 'High', title: 'ECG result with no ECG on file', explain: 'No ECG was uploaded for this visit. In the recording, the doctor only says an ECG will be organised — the "normal" result and conclusion were invented.' },
         evidence: {
-          transcript: [{ t: '06:31', who: 'Dr Kim', text: "We'll organise an ECG and some bloods before your next visit." }],
+          transcript: [{ t: '06:31', who: 'Doctor', text: "We'll organise an ECG and some bloods before your next visit." }],
           records: [{ label: 'ECG system · 14 Oct 2026', value: 'No tracing uploaded', verdict: 'missing' }],
         },
         pattern: 'p.cardio.ecg',
@@ -71,7 +71,7 @@ export const NOTES = [
         revised: 'Patient appeared anxious. Differential includes stable angina, reflux and musculoskeletal pain; cardiac work-up to be completed first.',
         flag: { type: 'bias', severity: 'High', title: 'Assumption based on age and gender', explain: 'The doctor never said this. Putting chest pain down to stress "in women of her age" is a known cause of missed heart disease in women.' },
         evidence: {
-          transcript: [{ t: '08:12', who: 'Dr Kim', text: 'Let’s rule out the heart first, then we can look at other causes.' }],
+          transcript: [{ t: '08:12', who: 'Doctor', text: 'Let’s rule out the heart first, then we can look at other causes.' }],
           records: [],
         },
         pattern: 'p.cardio.gender',
