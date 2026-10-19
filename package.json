@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
+    "@upstash/redis": "^1.39.0",
     "lucide-react": "^0.460.0",
     "mammoth": "^1.8.0",
     "pdfjs-dist": "^4.10.38",

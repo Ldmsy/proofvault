@@ -54,21 +54,21 @@ if (cmd === 'check') {
 if (cmd === 'seal') {
   if (!args[0]) usage();
   const name = flag('reviewer') ?? 'CLI reviewer';
-  const e = sealRecord({ docId: flag('doc') ?? null, title: flag('title') ?? args[0], text: read(args[0]), reviewer: { id: `cli-${name.toLowerCase().replace(/\W+/g, '-')}`, name }, metadata: { via: 'proofcore-cli' } });
+  const e = await sealRecord({ docId: flag('doc') ?? null, title: flag('title') ?? args[0], text: read(args[0]), reviewer: { id: `cli-${name.toLowerCase().replace(/\W+/g, '-')}`, name }, metadata: { via: 'proofcore-cli' } });
   console.log(`Sealed ${e.archiveId}\n  content sha256 ${e.contentHash}\n  previous seal  ${e.prevHash}\n  signed by      ${name} (${e.keyId}, Ed25519)`);
   process.exit(0);
 }
 
 if (cmd === 'verify') {
   const t = flag('tamper');
-  const v = verifyChain(t ? { archiveId: t, text: read(args[args.indexOf('--tamper') + 2]) } : undefined);
+  const v = await verifyChain(t ? { archiveId: t, text: read(args[args.indexOf('--tamper') + 2]) } : undefined);
   v.records.forEach((r) => console.log(`${r.ok ? c('32', 'OK    ') : r.downstreamOfBreak ? c('33', 'AFTER ') : c('31', 'BROKEN')}  #${r.index} ${r.archiveId}  ${r.title}${r.reason ? c('31', `  — ${r.reason}`) : ''}`));
   console.log(v.ok ? c('32', `\nChain intact: ${v.length} records.`) : c('31', `\nChain broken at #${v.brokenAt}.`));
   process.exit(v.ok ? 0 : 3);
 }
 
 if (cmd === 'ledger') {
-  listLedger().forEach((e) => console.log(`#${e.index} ${e.archiveId}  ${e.title}  ${e.reviewer.name}  ${e.sealedAt}`));
+  (await listLedger()).forEach((e) => console.log(`#${e.index} ${e.archiveId}  ${e.title}  ${e.reviewer.name}  ${e.sealedAt}`));
   process.exit(0);
 }
 
