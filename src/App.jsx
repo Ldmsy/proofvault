@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Info } from 'lucide-react';
+import ReviewExperience from './components/ReviewExperience.jsx';
 import Header from './components/Header.jsx';
 import Queue from './components/Queue.jsx';
 import Viewer from './components/Viewer.jsx';
@@ -31,6 +32,8 @@ export default function App() {
   const [reviewerId, setReviewerId] = useState(REVIEWERS[0].id);
   const [modal, setModal] = useState(null); // 'ingest' | 'reject' | 'seal'
   const [sealing, setSealing] = useState(false);
+  const [detailed, setDetailed] = useState(false);
+  const [sealError, setSealError] = useState('');
   const [dark, setDark] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [ingestCount, setIngestCount] = useState(0);
@@ -151,6 +154,7 @@ export default function App() {
     });
 
   const approve = async () => {
+    setSealError('');
     setSealing(true);
     try {
       const sealedText = workingText(doc);
@@ -158,7 +162,7 @@ export default function App() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docId: doc.id, title: doc.title, text: sealedText,
           reviewer: { id: reviewer.id, name: reviewer.name, role: reviewer.role },
-          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist, originalText: doc.segments.map(s => s.text).join('\n'), reviewHistory: doc.audit, handoff: doc.handoff || null } }),
+          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist, checklistPurpose: doc.handoff ? 'Internal review acknowledgements; not compliance certification or release approval' : 'Reviewer checklist', originalText: doc.segments.map(s => s.text).join('\n'), reviewHistory: doc.audit, handoff: doc.handoff || null } }),
       });
       const entry = await res.json();
       if (!res.ok) throw new Error(entry.error || 'Could not seal record');
@@ -171,6 +175,7 @@ export default function App() {
       setSelectedId(doc.id);
       setModal('seal');
     } catch (err) {
+      setSealError(`Seal failed: ${err.message}`);
       toast(`Seal failed: ${err.message}`, 'info');
     } finally {
       setSealing(false);
@@ -229,6 +234,8 @@ export default function App() {
   const miniSeg =
     flagged.find((s) => s.id === selectedSegId) || flagged.find((s) => !RESOLVED.includes(segStatus(doc, s.id))) || flagged[0];
 
+
+  if (doc.handoff && !detailed) return <ReviewExperience doc={doc} onUpdateRevision={updateRevision} onToggleCheck={toggleCheck} onApprove={approve} sealing={sealing} reviewerId={reviewerId} setReviewerId={setReviewerId} onDetailed={() => setDetailed(true)} error={sealError} />;
 
   return (
     <div className="flex min-h-screen flex-col lg:h-screen">
