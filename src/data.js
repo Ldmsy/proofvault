@@ -381,7 +381,7 @@ export const INITIAL_DOCS = [
 export const INGEST_TEMPLATE = {
   title: 'Customer Service Chatbot — Conversation Summary #CS-77120',
   category: 'Service',
-  org: 'Services Australia-style Contact Centre (demo tenant)',
+  org: 'Contact Centre · Customer Service Division',
   risk: 'Low',
   status: 'Pending Review',
   owner: 'Contact Centre QA Team',

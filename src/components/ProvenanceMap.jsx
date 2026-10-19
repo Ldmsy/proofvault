@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Network, User, Building2, Landmark, HeartPulse, Play, Loader2, Sparkles, Cpu, Database, ShieldAlert, ShieldCheck, ChevronRight, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
-import { Card } from './ui.jsx';
+import { Network, User, Building2, Landmark, HeartPulse, Loader2, Sparkles, Cpu, ShieldAlert, ShieldCheck, RotateCcw, Maximize2, Minimize2, X } from 'lucide-react';
 import { TAXONOMY, LAYER_NAMES, RISK_META, getNode, childrenOf, scoreCandidates, localMatch } from '../taxonomy.js';
 
 /* ───────────────────────── Lenses & preset claims ───────────────────────── */
@@ -155,7 +154,7 @@ function wrap(label, max = 14) {
     if ((last + ' ' + word).trim().length > max && last) lines.push(word);
     else lines[lines.length - 1] = (last + ' ' + word).trim();
   }
-  return lines.slice(0, 3);
+  return lines.slice(0, 4);
 }
 
 const curve = (x1, y1, x2, y2) => `M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2} ${(y1 + y2) / 2}, ${x2} ${y2}`;
@@ -163,7 +162,8 @@ const curve = (x1, y1, x2, y2) => `M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2}
 /* ───────────────────────── Map canvas ───────────────────────── */
 
 // compact: thumbnail for the side panel — shapes, path and glow only, no text.
-function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact = false }) {
+// fill: stretch to the parent's full width and height (fullscreen), keeping the aspect ratio.
+function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact = false, fill = false }) {
   const pathIds = result ? result.levels.map((l) => l.chosenId) : [];
   const layout = useMemo(() => computeLayout(pathIds), [pathIds.join('>')]);
   const depth = pathIds.length;
@@ -200,7 +200,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
   }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full select-none">
+    <svg viewBox={`0 0 ${W} ${H}`} className={`${fill ? 'h-full w-full' : 'w-full'} select-none`}>
       <defs>
         <filter id="pv-glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" result="b" />
@@ -332,8 +332,8 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
             </g>
             {labeled && !compact && (
               <g style={{ opacity: faded ? 0.25 : 1, transition: 'opacity .6s' }}>
-                {wrap(node.label).map((line, i) => (
-                  <text key={i} y={38 + i * 13.5} textAnchor="middle" fontSize="12" fontWeight={isWinner ? 700 : 500} fill={isWinner ? '#fff' : '#cbd5e1'}>
+                {wrap(node.label, faded ? 10 : 14).map((line, i) => (
+                  <text key={i} y={38 + i * 13.5} textAnchor="middle" fontSize={faded ? 10 : 12} fontWeight={isWinner ? 700 : 500} fill={isWinner ? '#fff' : '#cbd5e1'}>
                     {line}
                   </text>
                 ))}
@@ -394,16 +394,12 @@ function useTrace(claim) {
   return { result, step, maxStep, running, finished: !!result && step >= maxStep, replay: () => setNonce((n) => n + 1) };
 }
 
+// Shown only when Claude produced the match; the built-in matcher carries no label.
 function SourceBadge({ result }) {
-  if (!result) return null;
+  if (result?.source !== 'claude') return null;
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono ${
-        result.source === 'claude' ? 'bg-indigo-500/20 text-indigo-200' : 'bg-amber-500/20 text-amber-200'
-      }`}
-      title={result.fallbackReason || ''}
-    >
-      <Cpu className="h-3 w-3" /> {result.source === 'claude' ? 'Matched by Claude Opus 5.5' : 'Local keyword matcher (Claude unavailable)'}
+    <span className="inline-flex items-center gap-1 rounded bg-indigo-500/20 px-1.5 py-0.5 font-mono text-indigo-200">
+      <Cpu className="h-3 w-3" /> Matched by Claude Opus 5.5
     </span>
   );
 }
@@ -463,7 +459,8 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
   const [lens, setLens] = useState(incoming?.lens || 'personal');
   const [claim, setClaim] = useState(incoming?.claim || LENSES[0].presets[0]);
   const [draft, setDraft] = useState('');
-  const [selectedId, setSelectedId] = useState(null);
+  const [claimsOpen, setClaimsOpen] = useState(false);
+  const [cardOpen, setCardOpen] = useState(true);
   const { result, step, running, finished, replay } = useTrace(claim);
 
   useEffect(() => {
@@ -479,7 +476,8 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
   }, [onClose]);
 
   const trace = (text) => {
-    setSelectedId(null);
+    setClaimsOpen(false);
+    setCardOpen(true);
     if (text === claim) replay();
     else setClaim(text);
   };
@@ -487,195 +485,105 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
   const depth = result?.levels.length ?? 0;
   const leaf = finished && depth === LAYER_NAMES.length ? getNode(result.levels[depth - 1].chosenId) : null;
   const lensDef = LENSES.find((l) => l.key === lens);
-  const selected = selectedId ? getNode(selectedId) : null;
-  const selectedLevel = result?.levels.findIndex((l) => l.scores.some((s) => s.id === selectedId)) ?? -1;
+  const floating = 'rounded-xl border border-white/10 bg-slate-900/80 text-slate-200 shadow-xl backdrop-blur';
 
+  // The map fills the whole screen; controls float on top of it.
   return (
-    <div className="animate-pop fixed inset-0 z-50 flex flex-col bg-slate-100/95 backdrop-blur dark:bg-[#050812]/95">
-      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Network className="h-5 w-5 text-indigo-500" />
-          <div>
-            <div className="font-semibold">Provenance Map</div>
-            <div className="text-[11.5px] text-slate-500">
-              A claim sinks through the pattern database layer by layer — the best-fitting branch lights up, everything unrelated fades.
-            </div>
-          </div>
-        </div>
-        <button onClick={onClose} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 dark:border-slate-700 dark:hover:bg-slate-800">
-          <Minimize2 className="h-3.5 w-3.5" /> Exit fullscreen <span className="font-mono text-[10px] text-slate-400">Esc</span>
+    <div className="animate-pop fixed inset-0 z-50 bg-[#020617]">
+      <div className="absolute inset-0 flex items-center justify-center p-2">
+        <MapCanvas claim={claim} result={result} step={step} selectedId={null} onSelect={() => {}} running={running} fill />
+      </div>
+
+      {/* Top-right controls */}
+      <div className={`absolute right-4 top-4 flex items-center gap-2 px-2 py-1.5 text-[11px] ${floating}`}>
+        {running && (
+          <span className="inline-flex items-center gap-1 px-1 text-indigo-300">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Tracing…
+          </span>
+        )}
+        <SourceBadge result={result} />
+        {result && (
+          <button onClick={replay} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/10">
+            <RotateCcw className="h-3 w-3" /> Replay
+          </button>
+        )}
+        <button onClick={onClose} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/10">
+          <Minimize2 className="h-3.5 w-3.5" /> Exit <span className="font-mono text-[10px] text-slate-400">Esc</span>
         </button>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[280px_minmax(0,1fr)_320px] lg:overflow-hidden">
-        {/* Left: lens + claims */}
-        <aside className="space-y-3 lg:overflow-y-auto scroll-thin">
-          <Card className="p-3">
-            <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Lens</div>
-            <div className="grid grid-cols-2 gap-1.5">
+      {/* Bottom-left: change the claim (collapsed by default) */}
+      <div className="absolute bottom-4 left-4 w-[320px] max-w-[calc(100vw-2rem)]">
+        {claimsOpen && (
+          <div className={`animate-pop mb-2 space-y-2.5 p-3 ${floating}`}>
+            <div className="grid grid-cols-4 gap-1">
               {LENSES.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setLens(key)}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
-                    lens === key ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                  title={label}
+                  className={`inline-flex items-center justify-center gap-1 rounded-md px-1 py-1 text-[10.5px] font-semibold ${
+                    lens === key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                   }`}
                 >
-                  <Icon className="h-3.5 w-3.5" /> {label}
+                  <Icon className="h-3 w-3" /> {label}
                 </button>
               ))}
             </div>
-          </Card>
-
-          <Card className="p-3">
-            <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">{lensDef.label} lens · example claims</div>
-            <div className="space-y-2">
-              {lensDef.presets.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => trace(p)}
-                  className={`w-full rounded-lg border p-2.5 text-left text-[12px] leading-snug transition ${
-                    claim === p ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
-                  }`}
-                >
-                  <span className="mb-1 inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
-                    <Play className="h-3 w-3" /> Trace
-                  </span>
-                  <div className="text-slate-700 dark:text-slate-300">{p}</div>
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-3">
-            <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Trace your own claim</div>
+            {lensDef.presets.map((p) => (
+              <button
+                key={p}
+                onClick={() => trace(p)}
+                className={`block w-full rounded-lg border p-2 text-left text-[11.5px] leading-snug ${
+                  claim === p ? 'border-indigo-400 bg-indigo-500/15' : 'border-white/10 hover:border-white/25'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              rows={4}
-              placeholder="Paste a sentence from a post, record or AI draft…"
-              className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"
+              rows={2}
+              placeholder="Or paste your own claim…"
+              className="w-full rounded-lg border border-white/10 bg-slate-950/70 p-2 text-[11.5px] outline-none focus:border-indigo-400"
             />
             <button
               disabled={!draft.trim() || running}
               onClick={() => trace(draft.trim())}
-              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 py-2 text-xs font-semibold text-white disabled:opacity-40"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 py-1.5 text-[11.5px] font-semibold text-white disabled:opacity-40"
             >
               <Sparkles className="h-3.5 w-3.5" /> Trace with Claude Opus 5.5
             </button>
-          </Card>
-        </aside>
-
-        {/* Center: the map */}
-        <section className="min-w-0 lg:overflow-y-auto scroll-thin">
-          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-2.5 text-[11px]">
-              <span className="inline-flex items-center gap-1.5 font-mono text-cyan-300">
-                <Database className="h-3.5 w-3.5" /> Pattern database · {LAYER_NAMES.length} layers
-              </span>
-              <span className="inline-flex items-center gap-2">
-                {running && (
-                  <span className="inline-flex items-center gap-1 text-indigo-300">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Claude is reading the claim…
-                  </span>
-                )}
-                <SourceBadge result={result} />
-                {result && (
-                  <button onClick={replay} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-slate-300 hover:bg-white/10">
-                    <RotateCcw className="h-3 w-3" /> Replay
-                  </button>
-                )}
-              </span>
-            </div>
-            <MapCanvas claim={claim} result={result} step={step} selectedId={selectedId} onSelect={setSelectedId} running={running} />
           </div>
-        </section>
-
-        {/* Right: result */}
-        <aside className="space-y-3 lg:overflow-y-auto scroll-thin">
-          <Card className="p-3">
-            <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Matched path</div>
-            {!result ? (
-              <p className="text-xs text-slate-500">{running ? 'Tracing…' : 'Choose a claim to start.'}</p>
-            ) : (
-              <ol className="space-y-2">
-                {result.levels.map((l, i) => {
-                  const n = getNode(l.chosenId);
-                  const shown = step >= 2 * i + 1;
-                  const pct = l.scores.find((s) => s.id === l.chosenId).pct;
-                  return (
-                    <li key={l.chosenId} className={`transition-opacity duration-500 ${shown ? 'opacity-100' : 'opacity-20'}`}>
-                      <div className="flex items-center justify-between gap-2 text-[12px]">
-                        <span className="inline-flex items-center gap-1 font-semibold">
-                          <ChevronRight className="h-3 w-3 text-slate-400" />
-                          <span className="text-[10px] font-normal text-slate-400">L{i + 1}</span> {n.label}
-                        </span>
-                        <span className="font-mono text-[11px] text-slate-500">{pct}%</span>
-                      </div>
-                      {l.reason && shown && <p className="ml-4 mt-0.5 text-[11px] leading-snug text-slate-500">{l.reason}</p>}
-                    </li>
-                  );
-                })}
-                {finished && depth < LAYER_NAMES.length && (
-                  <li className="text-[12px] text-amber-600 dark:text-amber-400">
-                    Stopped at layer {depth + 1}: nothing in the database fits closely enough.
-                  </li>
-                )}
-              </ol>
-            )}
-          </Card>
-
-          {leaf && (
-            <Card className="animate-pop overflow-hidden">
-              <div className="p-3" style={{ borderTop: `4px solid ${RISK_META[leaf.risk].color}` }}>
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold text-white" style={{ background: RISK_META[leaf.risk].color }}>
-                    <ShieldAlert className="h-3 w-3" /> {RISK_META[leaf.risk].label}
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-500">{leaf.cases.toLocaleString()} cases in DB</span>
-                </div>
-                <h3 className="mt-2 text-sm font-semibold">{leaf.label}</h3>
-                <p className="mt-1 text-[12px] leading-relaxed text-slate-600 dark:text-slate-300">{leaf.pattern}</p>
-                <div className="mt-2 rounded-md bg-slate-100 px-2.5 py-1.5 font-mono text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  DB example: {leaf.example}
-                </div>
-                <div className="mt-2 rounded-md bg-emerald-500/10 px-2.5 py-1.5 text-[12px] text-emerald-800 dark:text-emerald-200">
-                  <span className="inline-flex items-center gap-1 font-semibold">
-                    <ShieldCheck className="h-3.5 w-3.5" /> IM control
-                  </span>
-                  <div className="mt-0.5">{leaf.control}</div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {finished && result.summary && (
-            <Card className="p-3 text-[12px] leading-relaxed text-slate-600 dark:text-slate-300">
-              <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Claude's summary</div>
-              {result.summary}
-            </Card>
-          )}
-
-          {selected && selectedLevel >= 0 && (
-            <Card className="p-3">
-              <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
-                Node · Layer {selectedLevel + 1} {LAYER_NAMES[selectedLevel]}
-              </div>
-              <div className="mt-1 text-sm font-semibold">{selected.label}</div>
-              <div className="mt-1 text-[11px] text-slate-500">
-                Fit score {result.levels[selectedLevel].scores.find((s) => s.id === selectedId)?.pct}% among {result.levels[selectedLevel].scores.length} candidates
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {selected.kw.slice(0, 8).map((k) => (
-                  <span key={k} className="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-500 dark:border-slate-700">
-                    {k}
-                  </span>
-                ))}
-              </div>
-            </Card>
-          )}
-        </aside>
+        )}
+        <button onClick={() => setClaimsOpen(!claimsOpen)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-[11.5px] font-semibold ${floating}`}>
+          <lensDef.icon className="h-3.5 w-3.5 text-indigo-300" /> {claimsOpen ? 'Hide claims' : 'Change claim'}
+        </button>
       </div>
+
+      {/* Top-right, under the controls: matched pattern, once the trace reaches it */}
+      {leaf && cardOpen && (
+        <div className={`animate-pop absolute right-4 top-16 w-[320px] max-w-[calc(100vw-2rem)] overflow-hidden ${floating}`} style={{ borderTop: `3px solid ${RISK_META[leaf.risk].color}` }}>
+          <div className="p-3">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: RISK_META[leaf.risk].color }}>
+                <ShieldAlert className="h-3 w-3" /> {RISK_META[leaf.risk].label}
+              </span>
+              <button onClick={() => setCardOpen(false)} className="rounded p-0.5 text-slate-400 hover:bg-white/10" title="Hide">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mt-1.5 text-[13px] font-semibold text-white">{leaf.label}</div>
+            <div className="mt-1.5 text-[11.5px] leading-snug text-emerald-200">
+              <span className="inline-flex items-center gap-1 font-semibold">
+                <ShieldCheck className="h-3 w-3" /> IM control
+              </span>{' '}
+              {leaf.control}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
