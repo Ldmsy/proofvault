@@ -1,29 +1,17 @@
-# ProofVault v0.2 — AI Record Integrity & Multimodal Provenance Platform
+# ProofVault v0.3 — AI Record Integrity & Provenance Platform
 
-**RIMPA Global Hackathon 2026 MVP** · Aligned to **NAA Information Management Standard**, **ISO 15489-1:2016**, **AS ISO 23081**, and **C2PA 2.1 Content Credentials** · Powered by **Claude Opus 5.5 Multimodal Engine**.
-
----
-
-## 🌊 The Core Story: One Information Pool, Two Lenses
-
-Why do everyday people fall for subtle bias, misinformation, and disinformation in the AI era?
-Because **information is like a water pool**:
-- **🟡 At the Top of the Pool (Water Surface — 微微泛黄)**: What an individual citizen, patient, or researcher reads every day — a sleek article with a photo and a chart — rarely looks blatantly fake. It only looks **slightly tinted yellow** (mildly persuasive, calm, seemingly reasonable).
-- **🟠 In the Middle Water Column (Propagation & Synthesis — 中层传导)**: Multimodal AI tools pair cropped images with hallucinated statistics, or polish discriminatory drafts into polite bureaucratic phrasing, diluting obvious errors into subtle persuasion.
-- **🔴 At the Bottom of the Pool (Pool Floor — 池底深红毒源)**: Sitting in the sediment are the **deep-red root sources** of misinformation, disinformation, and demographic bias — an unverified AI-sharpened photo stripped of C2PA metadata, a fabricated Productivity Commission report, a 10× ASR clinical dictation error, or a biased legacy dataset.
-
-**ProofVault solves this from both ends of the pool:**
-1. **🌊 Personal Contamination Pool (`PersonalPool.jsx` · Claude Opus 5.5 Multimodal Lens)**: Helps everyday users X-ray mixed-media content (**Images + PDF Charts/Documents + Article Prose**) and visually trace how **deep-red roots at the bottom of the pool** rise up to tint the **surface yellow** — with one-click pool purification.
-2. **🏛️ Enterprise IM Gate (`Queue.jsx` + `Viewer.jsx` + `RightPanel.jsx`)**: Empowers Information Managers (IM) to intercept hallucinations and bias **before** AI-generated records ever sink into the organisation's official archive (TRIM / EDRMS), enforcing **ISO 15489**, **AS ISO 23081**, **C2PA**, and **SHA-256 WORM Sealing**.
+**RIMPA Global Hackathon 2026 MVP** · Aligned to **NAA Information Management Standard**, **ISO 15489-1:2016**, **AS ISO 23081**, and **C2PA 2.1 Content Credentials** · Pattern matching by **Claude Opus 5.5**.
 
 ---
 
-## 🕸️ Provenance Map (layered pattern database)
+## The idea
 
-A claim sinks through ProofVault's pattern database layer by layer — **Domain → Sub-domain → Topic → Known pattern** (`src/taxonomy.js`, 7 domains, demo data). At each layer the best-fitting node lights up and is linked to the one above; unrelated branches fade into the background. The final node shows the known mis/disinformation or bias pattern, how often it has appeared, and the IM control to apply. Claims that match nothing are reported as novel and routed to a human verifier.
+AI-generated content rarely looks blatantly fake. A post, a policy draft or a clinical note reads calmly — but underneath it may rest on a known misinformation, disinformation or bias pattern. ProofVault does two things:
 
-- Lenses: **Personal · Enterprise · Government · Healthcare**, each with example claims; any flagged paragraph in the Enterprise IM Gate can be sent to the map with **Trace in Provenance Map**.
-- Matching: **Claude Opus 5.5** walks the tree (`server/taxonomyMatch.js`, `api/taxonomy-match.js`); its path is validated against the tree. Without a key or on error, a local keyword matcher is used and the map says so.
+1. **Provenance Map** — traces any claim through a layered pattern database: **Domain → Sub-domain → Topic → Known pattern**. At each layer the best-fitting node lights up and links to the one above; unrelated branches fade. The final node shows the known pattern, how often it has appeared, and the information-management control to apply. Claims that match nothing are reported as novel and routed to a human verifier. Lenses: **Personal · Enterprise · Government · Healthcare**.
+2. **Enterprise IM Gate** — lets Information Managers intercept hallucinations and bias in AI-generated records **before** they enter the official archive (TRIM / EDRMS): inline annotations, version diff, citation graph with C2PA metadata, a compliance checklist and SHA-256 WORM sealing.
+
+The two are joined: the mini Provenance Map in the left column traces the selected finding automatically, its **Fullscreen** button opens the full map, and every audit card has **Trace in Provenance Map**.
 
 ---
 
@@ -36,35 +24,27 @@ npm run dev
 
 Open `http://localhost:5173` in your browser.
 
-### Live Scan with Claude Opus 5.5 (optional)
+### Claude Opus 5.5 matching (optional)
 
-The **`+ Live Scan`** button sends your headline, text and an optional image (JPG/PNG/GIF/WebP) or PDF to a small backend (`server/poolScan.js` — mounted into the Vite dev server locally, and deployed as the Vercel Function `api/pool-scan.js`), which calls **Claude Opus 5.5** with structured output and returns a Contamination Pool.
+Map tracing calls a small backend (`server/taxonomyMatch.js` — mounted into the Vite dev server locally via `server/apiPlugin.js`, and deployed as the Vercel Function `api/taxonomy-match.js`). Claude walks the tree and its path is validated against it.
 
 ```bash
 cp .env.example .env.local   # then put your key after ANTHROPIC_API_KEY=
 npm run dev
 ```
 
-- The API key is read only by the local server and is never bundled into the browser code; `.env.local` is git-ignored.
-- If the call fails (no key, no network, timeout), the app automatically shows a **clearly labelled simulated result** so the demo never stalls.
-- On Vercel, set `ANTHROPIC_API_KEY` in the project's Environment Variables. Uploads there are limited to about 3 MB (Vercel's 4.5 MB request limit).
-- The built-in preset cases and enterprise records are pre-scripted demo data; only Live Scan runs a real model analysis.
+- The API key is read only by the server and is never bundled into the browser code; `.env.local` is git-ignored.
+- On Vercel, set `ANTHROPIC_API_KEY` in the project's Environment Variables and redeploy.
+- Without a key, or if the call fails, a local keyword matcher is used and the map labels the result accordingly.
+- The pattern database (`src/taxonomy.js`), enterprise records and case counts are fictional demo data.
 
 ---
 
-## 🎬 4-Act Story Pitch Walkthrough (3–5 Minute Demo Route)
+## 🎬 4-Act Pitch Walkthrough (3–5 minutes)
 
-Use the built-in **Pitch Story Arc Bar** at the top of the app to guide Mentors and Judges through our 4-act narrative:
+Use the **Story Arc** bar at the top of the app:
 
-1. **Act I · The Yellow Surface (Everyday Citizen Lens)**:
-   - Start in **`Personal Contamination Pool (Opus 5.5)`** on Case 1 (*Viral "Empty Bus Stop" Mixed-Media Article*).
-   - Point to the **Top of the Pool (Layer 1 · Yellow Surface)**: show how a local resident named Maya sees a calm, data-backed article claiming northern suburbs don't need the $4.2M subsidy.
-2. **Act II · Opus 5.5 Dives to the Red Pool Floor (Multimodal Forensics)**:
-   - Click the **Vision Bounding Boxes** on the left image (`C2PA Stripped + AI Inpainting` on the 04:55 AM sign; `Cropped Commuter Queue`) and the **Deep-Red Root Nodes (`Root #1, #2, #3`)** at the bottom of the pool.
-   - Click **`Quarantine Red Roots & Purify Pool`** to watch the rising red plumes turn into clean emerald water and reveal the unbiased truth.
-   - *(Optional)* Click **`+ Live Scan`** to drop custom text/media and watch **Claude Opus 5.5** build a Contamination Pool live!
-3. **Act III · Tracing Upstream to the Enterprise IM Gate**:
-   - Click **`Trace to Enterprise IM Gate (doc-pol26) →`** in the right panel (or click **Act III** in the top Story Bar).
-   - Show how those exact red roots originated in an unreviewed AI policy draft (`doc-pol26`) and how our **Audit Insight** flags them against **ISO 15489-1**, **Racial Discrimination Act**, and **NAA IM Standard**.
-4. **Act IV · Sealing Clean Collective Memory (Clinical & Archival Sign-Off)**:
-   - Click **Act IV** (or switch to `Clinical AI Ambient Scribe Note — Patient #4092`), resolve findings (or use **`Edit wording`** / **`Apply all AI fixes`**), inspect the **Provenance Graph & C2PA Credentials**, check the 4-point **IM Sign-off Checklist**, and click **`Approve & Seal`** to issue a live **SHA-256 WORM Archival Certificate**.
+1. **Act I · A Claim Reaches the Public** — opens the Provenance Map fullscreen on Maya's viral "empty bus stop" post and traces it down to *Cropped "empty service" imagery*.
+2. **Act II · Sinking Through the Pattern Database** — traces the "87% of households already received relief" statistic layer by layer to *Unsourced uptake statistics*; point out how unrelated domains fade.
+3. **Act III · Tracing Upstream to the Archive Gate** — the same statistic inside the unreviewed AI policy draft (`doc-pol26`); show the audit card's IM principle and evidence, then **Trace in Provenance Map**.
+4. **Act IV · Sealing Clean Collective Memory** — on the clinical scribe note (Patient #4092), resolve findings, check the 4-point **IM Sign-off** checklist and **Approve & Seal** to issue a SHA-256 archival certificate.

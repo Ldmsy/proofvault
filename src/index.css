@@ -14,16 +14,6 @@ body { @apply bg-slate-100 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 
 @keyframes pv-dash { to { stroke-dashoffset: -20; } }
 .flow-line { stroke-dasharray: 5 5; animation: pv-dash 1.2s linear infinite; }
 
-/* Upward contamination plume animation (bottom red -> top yellow) */
-@keyframes pv-plume-up {
-  from { stroke-dashoffset: 36; }
-  to { stroke-dashoffset: 0; }
-}
-.plume-up {
-  stroke-dasharray: 7 5;
-  animation: pv-plume-up 1.5s linear infinite;
-}
-
 @keyframes pv-pulse-slow {
   0%, 100% { opacity: 0.45; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.06); }

@@ -14,7 +14,7 @@ export default function Queue({ docs, selectedId, onSelect }) {
   );
 
   return (
-    <aside className="flex min-h-0 flex-col border-r border-slate-200 bg-white/60 dark:border-slate-800 dark:bg-slate-950/40">
+    <aside className="flex min-h-0 flex-1 flex-col border-r border-slate-200 bg-white/60 dark:border-slate-800 dark:bg-slate-950/40">
       <div className="border-b border-slate-200 p-3 dark:border-slate-800">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold">AI Record Queue</h2>

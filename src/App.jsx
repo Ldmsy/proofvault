@@ -4,11 +4,10 @@ import Header from './components/Header.jsx';
 import Queue from './components/Queue.jsx';
 import Viewer from './components/Viewer.jsx';
 import RightPanel from './components/RightPanel.jsx';
-import PersonalPool from './components/PersonalPool.jsx';
-import ProvenanceMap from './components/ProvenanceMap.jsx';
+import ProvenanceMapOverlay, { MiniProvenanceMap } from './components/ProvenanceMap.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
-import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS, PERSONAL_POOL_CASES, STORY_ACTS } from './data.js';
-import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, runLiveScan } from './lib.js';
+import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS, STORY_ACTS } from './data.js';
+import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED } from './lib.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -34,12 +33,9 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [ingestCount, setIngestCount] = useState(0);
 
-  // New state for Personal Multimodal Contamination Pool (Opus 5.5) & 4-Act Story Mode
-  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'enterprise' | 'map'
+  // Fullscreen Provenance Map & 4-Act Story Mode
+  const [mapOpen, setMapOpen] = useState(false);
   const [mapIncoming, setMapIncoming] = useState(null);
-  const [poolCases, setPoolCases] = useState(PERSONAL_POOL_CASES);
-  const [selectedPoolCaseId, setSelectedPoolCaseId] = useState(PERSONAL_POOL_CASES[0].id);
-  const [selectedPoolNodeId, setSelectedPoolNodeId] = useState('r1');
   const [storyOpen, setStoryOpen] = useState(true);
   const [activeActIdx, setActiveActIdx] = useState(0);
 
@@ -200,38 +196,33 @@ export default function App() {
     setIngestCount(n);
     setDocs((all) => [prepareDoc(raw), ...all]);
     selectDoc(raw.id);
-    setViewMode('enterprise');
     setModal(null);
     toast(`Ingested via ${sourceLabel} — 1 finding raised by pre-screen`);
   };
 
+  const LENS_BY_CATEGORY = { Clinical: 'healthcare', Policy: 'government', Corporate: 'enterprise', Service: 'enterprise' };
+  const openMap = (claim, lens) => {
+    if (claim) setMapIncoming({ claim, lens, nonce: Date.now() });
+    setMapOpen(true);
+  };
+  const traceClaim = (claim, category) => openMap(claim, LENS_BY_CATEGORY[category]);
+
+  // The mini map follows the selected finding, or the record's first unresolved one.
+  const flagged = doc.segments.filter((s) => s.flag);
+  const miniSeg =
+    flagged.find((s) => s.id === selectedSegId) || flagged.find((s) => !RESOLVED.includes(segStatus(doc, s.id))) || flagged[0];
+
   const handleSelectStoryAct = (idx) => {
     setActiveActIdx(idx);
     const act = STORY_ACTS[idx];
-    setViewMode(act.mode);
-    if (act.mode === 'personal') {
-      if (act.poolCaseId) setSelectedPoolCaseId(act.poolCaseId);
-      setSelectedPoolNodeId(act.focusNodeId || 'surf-1');
-    } else {
-      if (act.docId) selectDoc(act.docId);
-      if (act.segId) setTimeout(() => selectSeg(act.segId), 80);
-      if (act.tab) setTab(act.tab);
+    if (act.mode === 'map') {
+      openMap(act.claim, act.lens);
+      return;
     }
-  };
-
-  const LENS_BY_CATEGORY = { Clinical: 'healthcare', Policy: 'government', Corporate: 'enterprise', Service: 'enterprise' };
-  const traceClaim = (claim, category) => {
-    setMapIncoming({ claim, lens: LENS_BY_CATEGORY[category], nonce: Date.now() });
-    setViewMode('map');
-  };
-
-  const handleAddCustomPoolCase = async (payload) => {
-    const customCase = await runLiveScan(payload);
-    setPoolCases((prev) => [customCase, ...prev]);
-    setSelectedPoolCaseId(customCase.id);
-    setSelectedPoolNodeId('r1');
-    if (customCase.isFallback) toast(`Live analysis unavailable (${customCase.fallbackReason}) — showing simulated result`, 'info');
-    else toast('Claude Opus 5.5 decomposed your content into the Contamination Pool');
+    setMapOpen(false);
+    if (act.docId) selectDoc(act.docId);
+    if (act.segId) setTimeout(() => selectSeg(act.segId), 80);
+    if (act.tab) setTab(act.tab);
   };
 
   return (
@@ -241,8 +232,7 @@ export default function App() {
         dark={dark}
         onToggleTheme={() => setDark(!dark)}
         onIngest={() => setModal('ingest')}
-        viewMode={viewMode}
-        onChangeViewMode={setViewMode}
+        onOpenMap={() => openMap()}
         storyOpen={storyOpen}
         onToggleStory={() => setStoryOpen(!storyOpen)}
       />
@@ -293,29 +283,12 @@ export default function App() {
         </div>
       )}
 
-      {/* ──────── Main Workspace: Personal Multimodal Contamination Pool OR Enterprise 3-Column Gate ──────── */}
-      {viewMode === 'map' ? (
-        <ProvenanceMap incoming={mapIncoming} />
-      ) : viewMode === 'personal' ? (
-        <PersonalPool
-          cases={poolCases}
-          selectedCaseId={selectedPoolCaseId}
-          onSelectCase={(id) => {
-            setSelectedPoolCaseId(id);
-            setSelectedPoolNodeId('r1');
-          }}
-          selectedNodeId={selectedPoolNodeId}
-          onSelectNode={setSelectedPoolNodeId}
-          onJumpToEnterprise={(docId) => {
-            selectDoc(docId);
-            setViewMode('enterprise');
-            toast(`Switched to Enterprise IM Gate · Inspecting upstream record ${docId}`, 'info');
-          }}
-          onAddCustomCase={handleAddCustomPoolCase}
-        />
-      ) : (
+      {/* ──────── Main Workspace: queue + mini map │ record │ audit panels ──────── */}
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_400px]">
-          <Queue docs={docs} selectedId={selectedId} onSelect={selectDoc} />
+          <div className="flex min-h-0 flex-col">
+            <Queue docs={docs} selectedId={selectedId} onSelect={selectDoc} />
+            <MiniProvenanceMap claim={miniSeg?.text} onExpand={() => openMap(miniSeg?.text, LENS_BY_CATEGORY[doc.category])} />
+          </div>
           <Viewer
             doc={doc}
             selectedSegId={selectedSegId}
@@ -325,11 +298,6 @@ export default function App() {
             layers={layers}
             setLayers={setLayers}
             onApplyAll={applyAll}
-            onOpenPersonalPool={(poolId) => {
-              setSelectedPoolCaseId(poolId);
-              setViewMode('personal');
-              toast('Switched to Personal Contamination Pool (Opus 5.5 Multimodal View)', 'info');
-            }}
           />
           <RightPanel
             doc={doc}
@@ -353,7 +321,8 @@ export default function App() {
             sealing={sealing}
           />
         </div>
-      )}
+
+      {mapOpen && <ProvenanceMapOverlay incoming={mapIncoming} onClose={() => setMapOpen(false)} />}
 
       {modal === 'ingest' && <IngestModal onClose={() => setModal(null)} onIngest={ingest} />}
       {modal === 'reject' && <RejectModal doc={doc} onClose={() => setModal(null)} onConfirm={reject} />}

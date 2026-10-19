@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GitCompare, Wand2, Clock, User, Plug, CheckCircle2, XCircle, UserCheck, BadgeCheck, Lock, Waves } from 'lucide-react';
+import { GitCompare, Wand2, Clock, User, Plug, CheckCircle2, XCircle, UserCheck, BadgeCheck, Lock } from 'lucide-react';
 import { CATEGORY_ICON, RiskBadge, StatusBadge, FLAG_META, SEG_STATUS_META, Toggle, Card } from './ui.jsx';
 import { segStatus, issueCounts, fmtTime, wordDiff, currentVersion, getRevisedText } from '../lib.js';
 
@@ -165,7 +165,7 @@ function DiffView({ doc, compareTo, onSelect }) {
   );
 }
 
-export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setShowDiff, layers, setLayers, onApplyAll, onOpenPersonalPool }) {
+export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setShowDiff, layers, setLayers, onApplyAll }) {
   const [compareTo, setCompareTo] = useState('v11');
   const Icon = CATEGORY_ICON[doc.category];
   const c = issueCounts(doc);
@@ -222,15 +222,6 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
             </button>
           ))}
           <div className="ml-auto flex flex-wrap items-center gap-2.5">
-            {onOpenPersonalPool && (doc.id === 'doc-pol26' || doc.id === 'doc-4092') && (
-              <button
-                type="button"
-                onClick={() => onOpenPersonalPool(doc.id === 'doc-pol26' ? 'pool-subsidy' : 'pool-clinical')}
-                className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
-              >
-                <Waves className="h-3 w-3" /> See Downstream Impact in Personal Pool →
-              </button>
-            )}
             {showDiff && (
               <select
                 value={compareTo}

@@ -1,6 +1,5 @@
 {
   "functions": {
-    "api/pool-scan.js": { "maxDuration": 120 },
     "api/taxonomy-match.js": { "maxDuration": 120 }
   }
 }

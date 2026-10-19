@@ -1,4 +1,4 @@
-import { Network, ShieldCheck, Inbox, ShieldAlert, Fingerprint, Archive, Plus, Sun, Moon, Waves, Building2, BookOpen, Sparkles } from 'lucide-react';
+import { Network, Maximize2, ShieldCheck, Inbox, ShieldAlert, Fingerprint, Archive, Plus, Sun, Moon, BookOpen } from 'lucide-react';
 import { Card } from './ui.jsx';
 
 function Metric({ icon: Icon, label, value, sub, tone }) {
@@ -21,8 +21,7 @@ export default function Header({
   dark,
   onToggleTheme,
   onIngest,
-  viewMode,
-  onChangeViewMode,
+  onOpenMap,
   storyOpen,
   onToggleStory,
 }) {
@@ -47,49 +46,16 @@ export default function Header({
           </div>
         </div>
 
-        {/* Center/Right Mode Switcher: Enterprise IM Gate vs Personal Multimodal Pool */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('enterprise')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                viewMode === 'enterprise'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              Enterprise IM Gate
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('map')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                viewMode === 'map'
-                  ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Network className="h-3.5 w-3.5" />
-              Provenance Map
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('personal')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                viewMode === 'personal'
-                  ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-white shadow'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Waves className="h-3.5 w-3.5" />
-              Personal Contamination Pool
-              <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[9.5px] font-bold">
-                Opus 5.5
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onOpenMap}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 px-3 py-2 text-xs font-semibold text-white shadow hover:from-indigo-500 hover:to-cyan-500"
+          >
+            <Network className="h-3.5 w-3.5" />
+            Provenance Map
+            <Maximize2 className="h-3 w-3 opacity-80" />
+          </button>
 
           <button
             type="button"

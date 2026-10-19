@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import poolScanPlugin from './server/poolScanPlugin.js';
+import apiPlugin from './server/apiPlugin.js';
 
 export default defineConfig(({ mode }) => {
   // Server-only secrets (e.g. ANTHROPIC_API_KEY in .env.local) go to process.env for the SDK;
@@ -9,5 +9,5 @@ export default defineConfig(({ mode }) => {
   for (const key of ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL']) {
     if (env[key] && !process.env[key]) process.env[key] = env[key];
   }
-  return { plugins: [react(), poolScanPlugin()] };
+  return { plugins: [react(), apiPlugin()] };
 });

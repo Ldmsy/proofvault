@@ -1,10 +1,9 @@
-// Local backend: mounts the Live Scan and Provenance Map endpoints on the Vite dev and preview servers.
-import { handlePoolScan } from './poolScan.js';
+// Local backend: mounts the Provenance Map endpoint on the Vite dev and preview servers.
 import { handleTaxonomyMatch } from './taxonomyMatch.js';
 
-const ROUTES = { '/api/pool-scan': handlePoolScan, '/api/taxonomy-match': handleTaxonomyMatch };
+const ROUTES = { '/api/taxonomy-match': handleTaxonomyMatch };
 
-const MAX_BODY_BYTES = 20 * 1024 * 1024;
+const MAX_BODY_BYTES = 1024 * 1024;
 
 function readJson(req) {
   return new Promise((resolve, reject) => {
@@ -13,7 +12,7 @@ function readJson(req) {
     req.on('data', (c) => {
       size += c.length;
       if (size > MAX_BODY_BYTES) {
-        reject(Object.assign(new Error('Upload too large (max 20 MB)'), { status: 413 }));
+        reject(Object.assign(new Error('Request too large (max 1 MB)'), { status: 413 }));
         req.destroy();
       } else chunks.push(c);
     });
@@ -47,9 +46,9 @@ function middleware() {
   };
 }
 
-export default function poolScanPlugin() {
+export default function apiPlugin() {
   return {
-    name: 'proofvault-pool-scan',
+    name: 'proofvault-api',
     configureServer(server) {
       server.middlewares.use(middleware());
     },
