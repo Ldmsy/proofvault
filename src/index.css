@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 html, body, #root { height: 100%; }
-body { @apply bg-slate-100 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 antialiased; }
+body { @apply bg-slate-100 text-slate-900 dark:bg-[#141413] dark:text-slate-100 antialiased; }
 
 .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scroll-thin::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-700 rounded-full; }
@@ -25,3 +25,12 @@ body { @apply bg-slate-100 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 
 /* Provenance Map: matched path draws itself downward */
 @keyframes pv-draw-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .pv-draw { stroke-dasharray: 1; stroke-dashoffset: 0; animation: pv-draw-in .8s ease-out; }
+
+/* Vee mascot */
+@keyframes vee-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.vee-bob { animation: vee-bob 2.6s ease-in-out infinite; }
+@keyframes vee-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+.vee-blink { animation: vee-blink 4.5s infinite; }
+@keyframes vee-wiggle { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-12deg); } }
+.vee-wiggle { animation: vee-wiggle 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .vee-bob, .vee-blink, .vee-wiggle { animation: none; } }

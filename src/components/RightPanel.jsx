@@ -7,6 +7,7 @@ import {
 import { FLAG_META, SEG_STATUS_META, Card } from './ui.jsx';
 import { CHECKLIST, REVIEWERS } from '../data.js';
 import { flaggedSegments, segStatus, issueCounts, wordDiff, fmtTime, RESOLVED, getRevisedText } from '../lib.js';
+import { VeeSays } from './Vee.jsx';
 
 const TABS = [
   { key: 'audit', label: 'Audit Insight', icon: ScanSearch },
@@ -26,7 +27,20 @@ function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, onUpdateRevisi
   if (!seg) {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-slate-500">Select a highlighted paragraph, or pick a finding below.</p>
+        {(() => {
+          const left = flags.filter((s) => !RESOLVED.includes(segStatus(doc, s.id))).length;
+          return (
+            <VeeSays mood={left ? 'alert' : 'happy'} size={52} className="mb-3">
+              {left ? (
+                <>
+                  I spotted <b>{left} thing{left === 1 ? '' : 's'}</b> to check in this record. Pick one below, or click a coloured paragraph, and I'll explain what's wrong.
+                </>
+              ) : (
+                <>All findings are sorted. Open <b>IM Sign-off</b> to sign and lock this record.</>
+              )}
+            </VeeSays>
+          );
+        })()}
         {flags.map((s) => {
           const meta = FLAG_META[s.flag.type];
           const st = segStatus(doc, s.id);

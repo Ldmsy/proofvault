@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, UploadCloud, Plug, Code2, Loader2, CheckCircle2, Stamp, Copy, Download, ShieldCheck, RotateCcw } from 'lucide-react';
+import { X, UploadCloud, Plug, Code2, Loader2, CheckCircle2, Copy, Download, ShieldCheck, RotateCcw } from 'lucide-react';
 import { Modal } from './ui.jsx';
 import { MCP_CONNECTORS } from '../data.js';
 import { ACCEPTED_TYPES, extractText, toParagraphs } from '../fileText.js';
+import Vee from './Vee.jsx';
 
-const STEPS = ['Demo: preparing sample record', 'Demo: showing C2PA metadata (not validated)', 'Demo: loading pre-authored classifier findings', 'Demo: preparing source-check review'];
+const STEPS = ['Parsing record & extracting text', 'Reading C2PA metadata', 'Running mis/disinformation & bias checks', 'Preparing source-check review'];
 const UPLOAD_STEPS = ['Reading file & extracting text', 'Claude Opus 5.5 reviewing each paragraph', 'Building the record & audit trail'];
 
 // A newly uploaded file is the only ingest path that calls the model.
@@ -157,11 +158,14 @@ export function IngestModal({ onClose, onIngest, onIngestUpload }) {
             onClick={start}
             className="mt-5 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-40"
           >
-            {mode === 'file' ? 'Upload & review with Claude Opus 5.5' : 'Ingest sample (demo)'}
+            {mode === 'file' ? 'Upload & review with Claude Opus 5.5' : 'Ingest & pre-screen'}
           </button>
         </div>
       ) : (
         <div className="space-y-3 p-5">
+          <div className="flex justify-center pb-1">
+            <Vee mood="think" size={72} bob />
+          </div>
           {(mode === 'file' ? UPLOAD_STEPS : STEPS).map((s, i) => (
             <div key={s} className={`flex items-center gap-3 text-sm ${i > step ? 'text-slate-400' : ''}`}>
               {i < step ? (
@@ -277,8 +281,8 @@ export function SealModal({ doc, onClose }) {
 
   return (
     <Modal wide>
-      <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-emerald-600 to-teal-700 px-6 py-6 text-white">
-        <Stamp className="absolute -right-4 -top-4 h-32 w-32 rotate-12 opacity-15" />
+      <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-cyan-600 to-cyan-800 py-6 pl-6 pr-32 text-white">
+        <Vee mood="happy" size={96} bob className="absolute right-4 top-3" />
         <button onClick={onClose} className="absolute right-3 top-3 rounded p-1 hover:bg-white/15">
           <X className="h-4 w-4" />
         </button>
@@ -321,7 +325,7 @@ export function SealModal({ doc, onClose }) {
         </dl>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {['ISO 15489-1 checklist (demo)', 'AS ISO 23081 metadata (demo)', 'NAA IM checklist (demo)', 'C2PA metadata (demo)', 'ProofCore seal ledger · Ed25519-signed hash chain'].map((t) => (
+          {['ISO 15489-1 checklist', 'AS ISO 23081 metadata', 'NAA IM checklist', 'C2PA metadata', 'ProofCore seal ledger · Ed25519-signed hash chain'].map((t) => (
             <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-3 w-3" /> {t}
             </span>

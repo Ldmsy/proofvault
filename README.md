@@ -44,6 +44,8 @@ npm run dev
 
 **Upload / Ingest AI Record → File Upload** accepts `.txt`, `.md`, `.html`, `.pdf` and `.docx`. The file is read in the browser, split into paragraphs, and reviewed by Claude Opus 5.5 (`server/recordAnalyze.js`, `api/record-analyze.js`), which returns findings by paragraph number, suggested revisions and the key claims to source-check. The result becomes a new record in the queue with the usual audit, diff, provenance and sign-off tools. Long files are capped at 40 paragraphs / 20,000 characters.
 
+As soon as an upload is analysed, the **original AI draft is signed into the ProofCore seal ledger** (Ed25519 + hash chain) as its own entry, so any later change to it is detectable; human sign-off then seals the reviewed version as a second entry. The `v1.0` badge shows a lock once the original is sealed.
+
 Only newly uploaded files and claims typed into the map's "Trace with Claude Opus 5.5" box call the model; preset records and examples never do.
 
 ---

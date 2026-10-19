@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Network, User, Building2, Landmark, HeartPulse, Loader2, Sparkles, Cpu, ShieldAlert, ShieldCheck, RotateCcw, Maximize2, Minimize2, X } from 'lucide-react';
 import { TAXONOMY, LAYER_NAMES, RISK_META, getNode, childrenOf, scoreCandidates, localMatch } from '../taxonomy.js';
+import Vee from './Vee.jsx';
 
 /* ───────────────────────── Lenses & preset claims ───────────────────────── */
 
@@ -44,13 +45,13 @@ export const LENSES = [
 ];
 
 const DOMAIN_COLOR = {
-  health: '#22d3ee',
-  gov: '#818cf8',
-  corp: '#c084fc',
-  edu: '#34d399',
-  sci: '#38bdf8',
-  culture: '#fbbf24',
-  env: '#4ade80',
+  health: '#3f9a82',
+  gov: '#6c5fc7',
+  corp: '#b0782a',
+  edu: '#2f86a6',
+  sci: '#4a7fbf',
+  culture: '#c9a227',
+  env: '#5a9a45',
 };
 
 /* ───────────────────────── Matching (Claude → local fallback) ───────────────────────── */
@@ -171,7 +172,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
   const layout = useMemo(() => computeLayout(pathIds), [pathIds.join('>')]);
   const depth = pathIds.length;
   // Leaves take their risk colour; every other node takes its top-level domain's colour.
-  const colorOf = (node, domain = pathIds[0]) => (node.risk ? RISK_META[node.risk].color : DOMAIN_COLOR[domain] || '#94a3b8');
+  const colorOf = (node, domain = pathIds[0]) => (node.risk ? RISK_META[node.risk].color : DOMAIN_COLOR[domain] || '#a3a197');
 
   // Reveal timeline: layer L (0-based) candidates appear at step 2L, its winner is chosen at step 2L+1.
   const candidatesVisible = (level) => level === 0 || (!!result && step >= 2 * level);
@@ -214,8 +215,8 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
           </feMerge>
         </filter>
         <radialGradient id="pv-bg" cx="50%" cy="0%" r="90%">
-          <stop offset="0%" stopColor="#1e1b4b" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#020617" stopOpacity="0" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+          <stop offset="100%" stopColor="#f5f4ef" stopOpacity="1" />
         </radialGradient>
       </defs>
       <rect width={W} height={H} fill="url(#pv-bg)" />
@@ -223,13 +224,13 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
       {/* Layer bands */}
       {ROW_Y.map((y, i) => (
         <g key={i}>
-          <rect x="8" y={y - 52} width={W - 16} height="104" rx="14" fill={i % 2 ? '#0f172a' : '#111827'} fillOpacity="0.55" />
+          <rect x="8" y={y - 52} width={W - 16} height="104" rx="14" fill={i % 2 ? '#faf9f6' : '#ffffff'} stroke="#e4e2d9" />
           {!compact && (
           <>
-          <text x="22" y={y - 6} fill="#64748b" fontSize="11" fontWeight="700" letterSpacing="1.5">
+          <text x="22" y={y - 6} fill="#171717" fontSize="11" fontWeight="700" letterSpacing="1.5">
             LAYER {i + 1}
           </text>
-          <text x="22" y={y + 10} fill="#94a3b8" fontSize="11">
+          <text x="22" y={y + 10} fill="#77766e" fontSize="11">
             {LAYER_NAMES[i]}
           </text>
           {result && chosen(i) && (
@@ -238,7 +239,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
             </text>
           )}
           {result && finished && i === depth && depth < LAYER_NAMES.length && (
-            <text x="22" y={y + 26} fill="#f87171" fontSize="10" fontFamily="monospace">
+            <text x="22" y={y + 26} fill="#bf625c" fontSize="10" fontFamily="monospace">
               ✕ no fit
             </text>
           )}
@@ -248,13 +249,13 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
       ))}
 
       {/* Society band */}
-      <rect x="8" y={SOCIETY_Y - 14} width={W - 16} height="44" rx="12" fill="#0b1220" stroke="#1e293b" />
+      <rect x="8" y={SOCIETY_Y - 14} width={W - 16} height="44" rx="12" fill="#171717" stroke="#171717" />
       {!compact && (
       <>
-      <text x="22" y={SOCIETY_Y + 12} fill="#94a3b8" fontSize="11" fontWeight="700" letterSpacing="1.5">
+      <text x="22" y={SOCIETY_Y + 12} fill="#ffdc00" fontSize="11" fontWeight="700" letterSpacing="1.5">
         SOCIETY
       </text>
-      <text x={PAD_L} y={SOCIETY_Y + 12} fill={leaf && finished ? '#e2e8f0' : '#475569'} fontSize="12">
+      <text x={PAD_L} y={SOCIETY_Y + 12} fill={leaf && finished ? '#ffffff' : '#a3a197'} fontSize="12">
         {leaf && finished
           ? `This pattern already surfaced ${leaf.cases.toLocaleString()} times in the database · ${RISK_META[leaf.risk].label}`
           : result && finished
@@ -268,7 +269,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
       {pathIds.map((id, l) =>
         l + 1 < LAYER_NAMES.length && chosen(l) && candidatesVisible(l + 1)
           ? (getNode(id).children || []).map((c) => (
-              <path key={`fan-${c.id}`} d={curve(pos(id).x, pos(id).y + 20, pos(c.id).x, pos(c.id).y - 18)} stroke="#475569" strokeOpacity="0.35" strokeWidth="1" fill="none" />
+              <path key={`fan-${c.id}`} d={curve(pos(id).x, pos(id).y + 20, pos(c.id).x, pos(c.id).y - 18)} stroke="#a3a197" strokeOpacity="0.6" strokeWidth="1" fill="none" />
             ))
           : null
       )}
@@ -278,7 +279,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
         <g key={s.key}>
           <path d={s.d} stroke={s.color} strokeWidth="10" strokeOpacity="0.18" fill="none" filter="url(#pv-glow)" />
           <path d={s.d} stroke={s.color} strokeWidth="3" fill="none" pathLength="1" className="pv-draw" />
-          <circle r="4" fill="#fff">
+          <circle r="4" fill="#171717">
             <animateMotion dur="1.6s" repeatCount="indefinite" path={s.d} />
           </circle>
         </g>
@@ -286,13 +287,13 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
 
       {/* Problem node */}
       <g>
-        <rect x={W / 2 - 230} y={PROBLEM_Y - 30} width="460" height="56" rx="14" fill="#1e1b4b" stroke={running ? '#a5b4fc' : '#6366f1'} strokeWidth={running ? 2.5 : 1.5} className={running ? 'animate-pulse' : ''} />
+        <rect x={W / 2 - 230} y={PROBLEM_Y - 30} width="460" height="56" rx="14" fill="#171717" stroke={running ? '#ffdc00' : '#171717'} strokeWidth={running ? 2.5 : 1.5} className={running ? 'animate-pulse' : ''} />
         {!compact && (
         <>
-        <text x={W / 2} y={PROBLEM_Y - 10} textAnchor="middle" fill="#a5b4fc" fontSize="10" fontWeight="700" letterSpacing="2">
+        <text x={W / 2} y={PROBLEM_Y - 10} textAnchor="middle" fill="#ffdc00" fontSize="10" fontWeight="700" letterSpacing="2">
           PROBLEM · CLAIM UNDER TRACE
         </text>
-        <text x={W / 2} y={PROBLEM_Y + 10} textAnchor="middle" fill="#e2e8f0" fontSize="14">
+        <text x={W / 2} y={PROBLEM_Y + 10} textAnchor="middle" fill="#ffffff" fontSize="14">
           {claim ? (claim.length > 70 ? `${claim.slice(0, 68)}…` : claim) : 'Pick or type a claim to trace'}
         </text>
         </>
@@ -320,9 +321,9 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
               {isWinner && <circle r="34" fill={color} fillOpacity="0.25" filter="url(#pv-glow)" className="animate-pool-glow" />}
               <circle
                 r={isWinner ? 23 : 17}
-                fill={labeled ? color : '#64748b'}
+                fill={labeled ? color : '#b8b6ab'}
                 fillOpacity={isWinner ? 0.95 : labeled ? 0.22 : 0.9}
-                stroke={selectedId === node.id ? '#fff' : color}
+                stroke={selectedId === node.id ? '#171717' : color}
                 strokeWidth={selectedId === node.id ? 3 : 1.5}
               />
               {scanning && pct != null && (
@@ -337,12 +338,12 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
             {labeled && !compact && (
               <g style={{ opacity: faded ? 0.25 : 1, transition: 'opacity .6s' }}>
                 {wrap(node.label, faded ? 10 : 14).map((line, i) => (
-                  <text key={i} y={38 + i * 13.5} textAnchor="middle" fontSize={faded ? 10 : 12} fontWeight={isWinner ? 700 : 500} fill={isWinner ? '#fff' : '#cbd5e1'}>
+                  <text key={i} y={38 + i * 13.5} textAnchor="middle" fontSize={faded ? 10 : 12} fontWeight={isWinner ? 700 : 500} fill={isWinner ? '#171717' : '#5c5b55'}>
                     {line}
                   </text>
                 ))}
                 {pct != null && (scanning || isWinner) && (
-                  <text y="-28" textAnchor="middle" fontSize="11.5" fontFamily="monospace" fill={isWinner ? color : '#94a3b8'}>
+                  <text y="-28" textAnchor="middle" fontSize="11.5" fontFamily="monospace" fill={isWinner ? color : '#77766e'}>
                     {pct}%
                   </text>
                 )}
@@ -402,7 +403,7 @@ function useTrace(claim, live = false) {
 function SourceBadge({ result }) {
   if (result?.source !== 'claude') return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-indigo-500/20 px-1.5 py-0.5 font-mono text-indigo-200">
+    <span className="inline-flex items-center gap-1 rounded bg-cyan-100 px-1.5 py-0.5 font-mono text-cyan-800">
       <Cpu className="h-3 w-3" /> Matched by Claude Opus 5.5
     </span>
   );
@@ -416,7 +417,7 @@ export function MiniProvenanceMap({ claim, onExpand }) {
   const leaf = finished && depth === LAYER_NAMES.length ? getNode(result.levels[depth - 1].chosenId) : null;
 
   return (
-    <div className="border-r border-t border-slate-200 bg-white/60 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+    <div className="border-r border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950/40">
       <div className="mb-1.5 flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
           <Network className="h-4 w-4 text-indigo-500" /> Provenance Map
@@ -429,7 +430,7 @@ export function MiniProvenanceMap({ claim, onExpand }) {
           <Maximize2 className="h-3.5 w-3.5" /> Fullscreen
         </button>
       </div>
-      <button onClick={onExpand} className="block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 text-left">
+      <button onClick={onExpand} className="block w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-left">
         <MapCanvas claim={claim} result={result} step={step} running={running} compact selectedId={null} onSelect={() => {}} />
       </button>
       <div className="mt-1.5 space-y-1">
@@ -496,29 +497,30 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
   const depth = result?.levels.length ?? 0;
   const leaf = finished && depth === LAYER_NAMES.length ? getNode(result.levels[depth - 1].chosenId) : null;
   const lensDef = LENSES.find((l) => l.key === lens);
-  const floating = 'rounded-xl border border-white/10 bg-slate-900/80 text-slate-200 shadow-xl backdrop-blur';
+  const floating = 'rounded-xl border border-slate-200 bg-white/95 text-slate-900 shadow-[0_10px_25px_rgba(0,0,0,0.06)] backdrop-blur';
 
   // The map fills the whole screen; controls float on top of it.
   return (
-    <div className="animate-pop fixed inset-0 z-50 bg-[#020617]">
+    <div className="animate-pop fixed inset-0 z-50 bg-slate-100">
       <div className="absolute inset-0 flex items-center justify-center p-2">
         <MapCanvas claim={claim} result={result} step={step} selectedId={null} onSelect={() => {}} running={running} fill />
       </div>
 
       {/* Top-right controls */}
       <div className={`absolute right-4 top-4 flex items-center gap-2 px-2 py-1.5 text-[11px] ${floating}`}>
+        <Vee mood={running ? 'think' : leaf ? 'alert' : finished ? 'happy' : 'idle'} size={30} />
         {running && (
-          <span className="inline-flex items-center gap-1 px-1 text-indigo-300">
+          <span className="inline-flex items-center gap-1 px-1 text-slate-500">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Tracing…
           </span>
         )}
         <SourceBadge result={result} />
         {result && (
-          <button onClick={replay} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/10">
+          <button onClick={replay} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-slate-100">
             <RotateCcw className="h-3 w-3" /> Replay
           </button>
         )}
-        <button onClick={onClose} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/10">
+        <button onClick={onClose} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-slate-100">
           <Minimize2 className="h-3.5 w-3.5" /> Exit <span className="font-mono text-[10px] text-slate-400">Esc</span>
         </button>
       </div>
@@ -534,7 +536,7 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
                   onClick={() => setLens(key)}
                   title={label}
                   className={`inline-flex items-center justify-center gap-1 rounded-md px-1 py-1 text-[10.5px] font-semibold ${
-                    lens === key ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    lens === key ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   <Icon className="h-3 w-3" /> {label}
@@ -546,7 +548,7 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
                 key={p}
                 onClick={() => trace(p)}
                 className={`block w-full rounded-lg border p-2 text-left text-[11.5px] leading-snug ${
-                  claim === p ? 'border-indigo-400 bg-indigo-500/15' : 'border-white/10 hover:border-white/25'
+                  claim === p ? 'border-slate-950 bg-brand-yellow/30' : 'border-slate-200 hover:border-slate-400'
                 }`}
               >
                 {p}
@@ -557,19 +559,19 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
               onChange={(e) => setDraft(e.target.value)}
               rows={2}
               placeholder="Or paste your own claim…"
-              className="w-full rounded-lg border border-white/10 bg-slate-950/70 p-2 text-[11.5px] outline-none focus:border-indigo-400"
+              className="w-full rounded-lg border border-slate-300 bg-white p-2 text-[11.5px] outline-none focus:border-slate-950"
             />
             <button
               disabled={!draft.trim() || running}
               onClick={() => trace(draft.trim(), true)}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 py-1.5 text-[11.5px] font-semibold text-white disabled:opacity-40"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-950 py-1.5 text-[11.5px] font-semibold text-white disabled:opacity-40"
             >
               <Sparkles className="h-3.5 w-3.5" /> Trace with Claude Opus 5.5
             </button>
           </div>
         )}
         <button onClick={() => setClaimsOpen(!claimsOpen)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-[11.5px] font-semibold ${floating}`}>
-          <lensDef.icon className="h-3.5 w-3.5 text-indigo-300" /> {claimsOpen ? 'Hide claims' : 'Change claim'}
+          <lensDef.icon className="h-3.5 w-3.5 text-slate-950" /> {claimsOpen ? 'Hide claims' : 'Change claim'}
         </button>
       </div>
 
@@ -581,12 +583,12 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
               <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-white" style={{ background: RISK_META[leaf.risk].color }}>
                 <ShieldAlert className="h-3 w-3" /> {RISK_META[leaf.risk].label}
               </span>
-              <button onClick={() => setCardOpen(false)} className="rounded p-0.5 text-slate-400 hover:bg-white/10" title="Hide">
+              <button onClick={() => setCardOpen(false)} className="rounded p-0.5 text-slate-400 hover:bg-slate-100" title="Hide">
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="mt-1.5 text-[13px] font-semibold text-white">{leaf.label}</div>
-            <div className="mt-1.5 text-[11.5px] leading-snug text-emerald-200">
+            <div className="mt-1.5 text-[13px] font-semibold text-slate-950">{leaf.label}</div>
+            <div className="mt-1.5 text-[11.5px] leading-snug text-cyan-800">
               <span className="inline-flex items-center gap-1 font-semibold">
                 <ShieldCheck className="h-3 w-3" /> IM control
               </span>{' '}

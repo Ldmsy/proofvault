@@ -8,9 +8,9 @@ const P = (id, label, kw, risk, cases, pattern, example, control) => ({ id, labe
 export const LAYER_NAMES = ['Domain', 'Sub-domain', 'Topic', 'Known pattern (database)'];
 
 export const RISK_META = {
-  misinfo: { label: 'Misinformation', color: '#ef4444' },
-  disinfo: { label: 'Disinformation', color: '#e11d48' },
-  bias: { label: 'Bias', color: '#f97316' },
+  misinfo: { label: 'Misinformation', color: '#c4453a' },
+  disinfo: { label: 'Disinformation', color: '#a3324a' },
+  bias: { label: 'Bias', color: '#d9822b' },
 };
 
 export const TAXONOMY = [

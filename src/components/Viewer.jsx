@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { VeeSays } from './Vee.jsx';
 import { GitCompare, Wand2, Clock, User, Plug, CheckCircle2, XCircle, UserCheck, BadgeCheck, Lock } from 'lucide-react';
 import { CATEGORY_ICON, RiskBadge, StatusBadge, FLAG_META, SEG_STATUS_META, Toggle, Card } from './ui.jsx';
 import { segStatus, issueCounts, fmtTime, wordDiff, currentVersion, getRevisedText } from '../lib.js';
@@ -20,13 +21,59 @@ function VersionChain({ doc }) {
                 ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
                 : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
             }`}
+            title={i === 0 && doc.originalSeal ? `Locked ${doc.originalSeal.archiveId} · sha256:${doc.originalSeal.hash.slice(0, 16)}…` : undefined}
           >
+            {i === 0 && doc.originalSeal && <Lock className="mr-1 inline h-2.5 w-2.5 align-[-1px]" />}
             {v}
           </span>
           {i < VERSIONS.length - 1 && <span className="text-slate-400">→</span>}
         </span>
       ))}
     </div>
+  );
+}
+
+const WELCOME_KEY = 'proofvault.welcome.v1';
+
+// First-visit guide. Remembered per browser; works without storage too.
+function Welcome() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(WELCOME_KEY) !== 'done';
+    } catch {
+      return true;
+    }
+  });
+  if (!open) return null;
+  const close = () => {
+    setOpen(false);
+    try {
+      localStorage.setItem(WELCOME_KEY, 'done');
+    } catch {
+      /* storage unavailable: the guide simply shows again next time */
+    }
+  };
+  return (
+    <VeeSays
+      mood="idle"
+      size={64}
+      className="animate-pop mb-3"
+      action={
+        <button onClick={close} className="rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+          Got it, let's check
+        </button>
+      }
+    >
+      <div className="font-semibold text-slate-950 dark:text-white">Hi, I'm Vee — I guard your records before they're archived.</div>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[12.5px] text-slate-600 dark:text-slate-300">
+        <li>
+          <span className="rounded bg-red-500/15 px-1 text-red-700 dark:text-red-300">Red</span> means the facts don't match the source.{' '}
+          <span className="rounded bg-orange-500/15 px-1 text-orange-700 dark:text-orange-300">Orange</span> means bias.
+        </li>
+        <li>Click one, and I'll show you why on the right.</li>
+        <li>Fix it, then sign and lock the record in <b>IM Sign-off</b>.</li>
+      </ol>
+    </VeeSays>
   );
 }
 
@@ -174,6 +221,7 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
   return (
     <main className="flex min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto p-4 scroll-thin">
+        <Welcome />
         <Card className="p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
@@ -206,7 +254,7 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
           </div>
         </Card>
 
-        <div className="sticky top-0 z-10 -mx-4 mt-3 flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-100/90 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-[#070b14]/90">
+        <div className="sticky top-0 z-10 -mx-4 mt-3 flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-100/90 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-[#141413]/90">
           {['misinfo', 'bias'].map((t) => (
             <button
               key={t}

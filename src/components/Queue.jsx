@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, GitBranch, AlertTriangle } from 'lucide-react';
 import { CATEGORY_ICON, RiskBadge, StatusBadge, ScoreBar } from './ui.jsx';
 import { currentVersion, issueCounts, provenanceScore } from '../lib.js';
+import Vee from './Vee.jsx';
 
 const FILTERS = ['All', 'High', 'Medium', 'Low'];
 
@@ -97,7 +98,12 @@ export default function Queue({ docs, selectedId, onSelect }) {
             </button>
           );
         })}
-        {!visible.length && <div className="py-8 text-center text-xs text-slate-500">No records match.</div>}
+        {!visible.length && (
+          <div className="flex flex-col items-center gap-2 py-8 text-center text-xs text-slate-500">
+            <Vee mood="think" size={56} />
+            Nothing matches that search.
+          </div>
+        )}
       </div>
     </aside>
   );
