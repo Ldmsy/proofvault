@@ -34,23 +34,39 @@ export async function extractText(file) {
   return file.text();
 }
 
+const ENDS_SENTENCE = /[.!?]["”')\]]?$/;
+// Headings are short and contain no sentence punctuation (a wrapped line in a narrow column usually does).
+const isHeading = (line) => line.length < 60 && !/[.!?,;:]/.test(line);
+
+// Splits one blank-line-separated block into paragraphs. PDF text has no blank lines, only wrapped
+// lines: there a paragraph ends on a line that finishes a sentence and is clearly shorter than a full
+// line. Otherwise (one paragraph per line) lines are joined until a sentence ends.
+function splitLines(block) {
+  const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 3) return [lines.join(' ')];
+  const max = Math.max(...lines.map((l) => l.length));
+  const wrapped = max >= 60 && lines.filter((l) => l.length >= 0.85 * max).length >= lines.length * 0.6;
+  const out = [];
+  let cur = '';
+  for (const line of lines) {
+    if (isHeading(line) && !cur) {
+      out.push(line);
+      continue;
+    }
+    cur = cur ? `${cur} ${line}` : line;
+    if (ENDS_SENTENCE.test(line) && (!wrapped || line.length < 0.85 * max)) {
+      out.push(cur);
+      cur = '';
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
 // Blank lines separate paragraphs; short lines (headings) are folded into the paragraph that follows.
 export function toParagraphs(text) {
   const clean = text.replace(/\r\n?/g, '\n').replace(/[ \t]+/g, ' ').trim();
-  let blocks = clean.split(/\n\s*\n/);
-  // No blank lines (typical of PDF text): join wrapped lines until one ends a sentence.
-  if (blocks.length === 1) {
-    blocks = [];
-    let cur = '';
-    for (const line of clean.split('\n')) {
-      cur = cur ? `${cur} ${line.trim()}` : line.trim();
-      if (/[.!?]["”')\]]?$/.test(cur)) {
-        blocks.push(cur);
-        cur = '';
-      }
-    }
-    if (cur) blocks.push(cur);
-  }
+  const blocks = clean.split(/\n\s*\n/).flatMap(splitLines);
   const merged = [];
   let carry = '';
   for (const raw of blocks) {
