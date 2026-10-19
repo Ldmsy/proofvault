@@ -35,7 +35,9 @@ export default function Queue({ docs, selectedId, onSelect }) {
               key={f}
               onClick={() => setRisk(f)}
               className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium ${
-                risk === f ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                risk === f
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
               {f}
@@ -84,7 +86,7 @@ export default function Queue({ docs, selectedId, onSelect }) {
                 <div className="flex-1">
                   <ScoreBar value={score} />
                 </div>
-                <span className="w-7 text-right text-[11px] font-semibold tabular-nums">{score}</span>
+                <span className="w-7 text-right text-[11px] font-semibold tabular-nums">{score}%</span>
                 {c.open + c.escalated > 0 && (
                   <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-red-600 dark:text-red-400">
                     <AlertTriangle className="h-3 w-3" />

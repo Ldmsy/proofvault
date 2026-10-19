@@ -8,6 +8,7 @@ export function prepareDoc(raw) {
   return {
     ...raw,
     segStatus: {},
+    customRevisions: {},
     checklist: {},
     seal: null,
     audit: [
@@ -25,6 +26,10 @@ export const flaggedSegments = (doc) => doc.segments.filter((s) => s.flag);
 
 export function segStatus(doc, segId) {
   return doc.segStatus[segId] || 'open';
+}
+
+export function getRevisedText(doc, seg) {
+  return doc.customRevisions?.[seg.id] ?? seg.revised ?? seg.text;
 }
 
 export function issueCounts(doc) {
@@ -65,7 +70,7 @@ export function workingText(doc) {
     .map((s) => {
       const st = segStatus(doc, s.id);
       if (st === 'rejected') return null;
-      if (st === 'fixed') return s.revised;
+      if (st === 'fixed') return getRevisedText(doc, s);
       return s.text;
     })
     .filter(Boolean)
@@ -119,4 +124,142 @@ export function wordDiff(a, b) {
   while (i < m) push('del', x[i++]);
   while (j < n) push('add', y[j++]);
   return out;
+}
+
+// Dynamic Opus 5.5 Multimodal Pool Builder for user-submitted custom text/media
+export function buildCustomPoolCase({ title, text, mediaName, modalityType }) {
+  const cleanTitle = title?.trim() || 'Custom Multimodal Submission — Live Opus 5.5 Audit';
+  const body =
+    text?.trim() ||
+    'Recent community survey shows 92% of residents oppose bike lanes and prefer redirecting funds, as seen in attached street photo.';
+  const hasNumbers = /\d+%|\$\d+|\d{4}/.test(body);
+  const id = `pool-custom-${Date.now()}`;
+
+  return {
+    id,
+    title: cleanTitle,
+    subtitle: `${mediaName || 'Uploaded Visual/Doc'} + Text · Live Decomposed by Cloud Opus 5.5`,
+    persona: 'Custom Live Inspection (Opus 5.5)',
+    modalities: [mediaName ? `Media (${mediaName})` : `Visual (${modalityType})`, 'Document Metadata', 'Submitted Text'],
+    surfaceTintScore: 71,
+    linkedDocId: 'doc-pol26',
+    linkedDocLabel: 'Cross-referenced against Enterprise IM Repository',
+    storyContext:
+      'Live decomposition by Cloud Opus 5.5 Multimodal Engine: separating the mildly persuasive yellow surface from its underlying red evidentiary and framing roots.',
+    artifact: {
+      headline: cleanTitle,
+      sourceTag: `Live Scan · ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} AEDT · Cloud Opus 5.5`,
+      sceneType: 'custom-scan',
+      imageCaption: `Attached Media: ${mediaName || 'Mixed-Media Snapshot (C2PA Unverified)'}`,
+      visionBoxes: [
+        {
+          id: 'vb1',
+          x: '14%',
+          y: '20%',
+          w: '42%',
+          h: '36%',
+          tone: 'red',
+          tag: 'Opus 5.5 Vision · Missing C2PA Provenance',
+          finding: 'Visual attachment lacks cryptographic C2PA Content Credentials; context cropping & post-processing detected.',
+        },
+        {
+          id: 'vb2',
+          x: '52%',
+          y: '48%',
+          w: '38%',
+          h: '34%',
+          tone: 'orange',
+          tag: 'Opus 5.5 Cross-Modal · Visual-Text Mismatch',
+          finding: 'Visual framing selectively reinforces the text claim while omitting baseline comparison context.',
+        },
+      ],
+      docExcerpt: {
+        title: 'Opus 5.5 Claim & Citation Extraction',
+        stat: hasNumbers ? 'Detected quantitative claim without primary register URI' : 'Detected broad generalisation without attributable source',
+        warning: 'ISO 15489-1 §5.2.2 Reliability Alert: Unverified primary source behind surface narrative.',
+      },
+      articleQuotes: [
+        {
+          id: 'q1',
+          text: `"${body.slice(0, 180)}${body.length > 180 ? '…' : ''}"`,
+          tint: 'Soft Yellow Surface — reads fluently on the surface, but carries ungrounded assumptions from the red roots below.',
+        },
+      ],
+    },
+    pool: {
+      surface: {
+        id: 'surf-1',
+        layer: 'surface',
+        label: 'Surface Takeaway · Tinted Yellow (微微泛黄)',
+        title: `"${cleanTitle}" — Plausible on the surface, but tinted by unverified roots`,
+        summary:
+          'Everyday readers encounter a cohesive multimodal package (visual + claim) that nudges opinion without exposing the missing provenance.',
+        purifiedTitle: 'Neutralised & Source-Grounded Summary (IM Verified)',
+        purifiedSummary:
+          'Claims restricted to verifiable source records; unauthenticated visual attachments flagged as unverified context per NAA & C2PA standards.',
+        tintLevel: '71% Surface Tinting (Opus 5.5 Live Score)',
+      },
+      middle: [
+        {
+          id: 'mid-1',
+          layer: 'middle',
+          label: 'Cross-Modal Amplification',
+          title: 'Visual + Textual Confirmation Loop',
+          modality: 'Multimodal Fusion',
+          desc: 'Combining an unverified image/chart with assertive prose lowers reader scepticism and masks source gaps.',
+        },
+        {
+          id: 'mid-2',
+          layer: 'middle',
+          label: 'Tone Smoothing',
+          title: 'Confident AI / Editorial Phrasing',
+          modality: 'Language Framing',
+          desc: 'Converts contested or incomplete evidence into smooth, authoritative-sounding conclusions.',
+        },
+      ],
+      roots: [
+        {
+          id: 'r1',
+          layer: 'root',
+          type: 'Disinformation / Provenance Risk',
+          modality: 'Visual / Media Attachment',
+          title: 'Unauthenticated Media Without C2PA Content Credentials',
+          confidence: 95,
+          c2pa: 'No urn:c2pa manifest attached · Origin unverified',
+          detail: 'Opus 5.5 detected missing origin signature and potential selective framing in the visual/document layer.',
+          imTip: 'IM Know-How: Verify C2PA 2.1 manifest and original capture metadata before trusting visual evidence.',
+        },
+        {
+          id: 'r2',
+          layer: 'root',
+          type: 'Misinformation Source',
+          modality: 'Textual Claim',
+          title: 'Ungrounded Factual / Statistical Assertion',
+          confidence: 92,
+          c2pa: '0 matching authoritative records in linked EDRMS',
+          detail: 'Key claims in the submitted text cannot be traced to an audited primary record (ISO 15489 Reliability).',
+          imTip: 'IM Know-How: Require source record URIs for every quantitative or causal claim.',
+        },
+        {
+          id: 'r3',
+          layer: 'root',
+          type: 'Bias Source',
+          modality: 'Framing & Selection',
+          title: 'Selective Context & Confirmation Bias',
+          confidence: 89,
+          c2pa: 'One-sided evidence selection detected by Opus 5.5',
+          detail: 'Omits countervailing demographic or operational context, steering the reader toward a predetermined conclusion.',
+          imTip: 'IM Know-How: Apply AS ISO 23081 contextual metadata checks to ensure balanced provenance.',
+        },
+      ],
+      edges: [
+        { from: 'r1', to: 'mid-1' },
+        { from: 'r2', to: 'mid-1' },
+        { from: 'r2', to: 'mid-2' },
+        { from: 'r3', to: 'mid-2' },
+        { from: 'mid-1', to: 'surf-1' },
+        { from: 'mid-2', to: 'surf-1' },
+      ],
+    },
+  };
 }

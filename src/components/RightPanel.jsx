@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import {
   ScanSearch, Network, ClipboardCheck, Wand2, UserCheck, XCircle, Undo2, ChevronLeft, ChevronRight, BookOpen, Scale,
-  FileSearch, Gauge, CheckCircle2, AlertTriangle, ShieldCheck, Stamp, RotateCcw, History, BadgeCheck, Cpu, Hash, KeyRound, Link2,
+  FileSearch, Gauge, CheckCircle2, AlertTriangle, ShieldCheck, Stamp, RotateCcw, History, BadgeCheck, Cpu, Hash, KeyRound, Link2, PenLine,
 } from 'lucide-react';
 import { FLAG_META, SEG_STATUS_META, Card } from './ui.jsx';
 import { CHECKLIST, REVIEWERS } from '../data.js';
-import { flaggedSegments, segStatus, issueCounts, wordDiff, fmtTime, RESOLVED } from '../lib.js';
+import { flaggedSegments, segStatus, issueCounts, wordDiff, fmtTime, RESOLVED, getRevisedText } from '../lib.js';
 
 const TABS = [
   { key: 'audit', label: 'Audit Insight', icon: ScanSearch },
@@ -14,7 +15,10 @@ const TABS = [
 
 /* ───────────────────────── Audit insight ───────────────────────── */
 
-function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, locked }) {
+function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, onUpdateRevision, locked }) {
+  const [editing, setEditing] = useState(false);
+  const [draftText, setDraftText] = useState('');
+
   const flags = flaggedSegments(doc);
   const seg = flags.find((s) => s.id === selectedSegId);
 
@@ -49,7 +53,11 @@ function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, locked }) {
   const meta = FLAG_META[seg.flag.type];
   const st = segStatus(doc, seg.id);
   const idx = flags.indexOf(seg);
-  const go = (d) => onSelectSeg(flags[(idx + d + flags.length) % flags.length].id);
+  const currentRevised = getRevisedText(doc, seg);
+  const go = (d) => {
+    setEditing(false);
+    onSelectSeg(flags[(idx + d + flags.length) % flags.length].id);
+  };
 
   return (
     <div key={seg.id} className="animate-pop space-y-3">
@@ -115,24 +123,69 @@ function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, locked }) {
             </p>
           </div>
           <div>
-            <div className="mb-1 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
-              <Wand2 className="h-3 w-3" /> Suggested correction
-            </div>
-            <p className="rounded-md border border-dashed border-slate-300 px-2.5 py-1.5 leading-relaxed dark:border-slate-700">
-              {wordDiff(seg.text, seg.revised).map((p, i) =>
-                p.type === 'same' ? (
-                  <span key={i}>{p.text}</span>
-                ) : p.type === 'del' ? (
-                  <span key={i} className="bg-red-500/15 text-red-700 line-through dark:text-red-300">
-                    {p.text}
-                  </span>
-                ) : (
-                  <span key={i} className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                    {p.text}
-                  </span>
-                )
+            <div className="mb-1 flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <Wand2 className="h-3 w-3" /> Suggested correction
+              </span>
+              {!locked && !editing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftText(currentRevised);
+                    setEditing(true);
+                  }}
+                  className="inline-flex items-center gap-1 font-sans text-[10.5px] font-medium normal-case text-indigo-600 hover:underline dark:text-indigo-400"
+                >
+                  <PenLine className="h-3 w-3" /> Edit wording
+                </button>
               )}
-            </p>
+            </div>
+
+            {editing ? (
+              <div className="space-y-2">
+                <textarea
+                  rows={3}
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  className="w-full rounded-md border border-indigo-500 bg-white p-2 text-xs outline-none dark:bg-slate-950"
+                />
+                <div className="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditing(false)}
+                    className="rounded px-2 py-1 text-[11px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (draftText.trim()) onUpdateRevision(seg.id, draftText.trim());
+                      setEditing(false);
+                    }}
+                    className="rounded bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-indigo-500"
+                  >
+                    Save &amp; Apply Custom Wording
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed border-slate-300 px-2.5 py-1.5 leading-relaxed dark:border-slate-700">
+                {wordDiff(seg.text, currentRevised).map((p, i) =>
+                  p.type === 'same' ? (
+                    <span key={i}>{p.text}</span>
+                  ) : p.type === 'del' ? (
+                    <span key={i} className="bg-red-500/15 text-red-700 line-through dark:text-red-300">
+                      {p.text}
+                    </span>
+                  ) : (
+                    <span key={i} className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                      {p.text}
+                    </span>
+                  )
+                )}
+              </p>
+            )}
           </div>
         </div>
       </Card>

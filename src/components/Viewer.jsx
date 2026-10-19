@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { GitCompare, Wand2, Clock, User, Plug, CheckCircle2, XCircle, UserCheck, BadgeCheck, Lock } from 'lucide-react';
+import { GitCompare, Wand2, Clock, User, Plug, CheckCircle2, XCircle, UserCheck, BadgeCheck, Lock, Waves } from 'lucide-react';
 import { CATEGORY_ICON, RiskBadge, StatusBadge, FLAG_META, SEG_STATUS_META, Toggle, Card } from './ui.jsx';
-import { segStatus, issueCounts, fmtTime, wordDiff, currentVersion } from '../lib.js';
+import { segStatus, issueCounts, fmtTime, wordDiff, currentVersion, getRevisedText } from '../lib.js';
 
 const VERSIONS = ['v1.0 AI Draft', 'v1.1 Human-Revised', 'v1.2 Audited & Sealed'];
 
@@ -41,12 +41,13 @@ function Segment({ seg, index, doc, selected, layers, onSelect }) {
   const flag = seg.flag;
   const visibleFlag = flag && layers[flag.type];
   const meta = flag && FLAG_META[flag.type];
+  const revText = getRevisedText(doc, seg);
 
   let body;
   if (!visibleFlag) {
-    body = <span>{st === 'fixed' ? seg.revised : seg.text}</span>;
+    body = <span>{st === 'fixed' ? revText : seg.text}</span>;
   } else if (st === 'fixed') {
-    body = <span className="rounded bg-emerald-500/10 px-1 text-emerald-800 dark:text-emerald-200">{seg.revised}</span>;
+    body = <span className="rounded bg-emerald-500/10 px-1 text-emerald-800 dark:text-emerald-200">{revText}</span>;
   } else if (st === 'rejected') {
     body = <span className="text-slate-400 line-through decoration-slate-400">{seg.text}</span>;
   } else {
@@ -115,10 +116,10 @@ function DiffView({ doc, compareTo, onSelect }) {
   const rows = doc.segments.map((seg) => {
     let right = seg.text;
     let removed = false;
-    if (compareTo === 'v11') right = seg.revised ?? seg.text;
+    if (compareTo === 'v11') right = getRevisedText(doc, seg);
     else {
       const st = segStatus(doc, seg.id);
-      if (st === 'fixed') right = seg.revised;
+      if (st === 'fixed') right = getRevisedText(doc, seg);
       if (st === 'rejected') removed = true;
     }
     return { seg, right, removed, changed: removed || right !== seg.text };
@@ -164,7 +165,7 @@ function DiffView({ doc, compareTo, onSelect }) {
   );
 }
 
-export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setShowDiff, layers, setLayers, onApplyAll }) {
+export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setShowDiff, layers, setLayers, onApplyAll, onOpenPersonalPool }) {
   const [compareTo, setCompareTo] = useState('v11');
   const Icon = CATEGORY_ICON[doc.category];
   const c = issueCounts(doc);
@@ -220,7 +221,16 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
               {FLAG_META[t].label} ({c[t]})
             </button>
           ))}
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex flex-wrap items-center gap-2.5">
+            {onOpenPersonalPool && (doc.id === 'doc-pol26' || doc.id === 'doc-4092') && (
+              <button
+                type="button"
+                onClick={() => onOpenPersonalPool(doc.id === 'doc-pol26' ? 'pool-subsidy' : 'pool-clinical')}
+                className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+              >
+                <Waves className="h-3 w-3" /> See Downstream Impact in Personal Pool →
+              </button>
+            )}
             {showDiff && (
               <select
                 value={compareTo}
@@ -253,7 +263,9 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
         {locked && (
           <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
             <Lock className="h-3.5 w-3.5" />
-            {doc.seal ? 'This record is sealed in the immutable archive. Content is read-only.' : 'Returned to the AI system for regeneration. Re-open the review in the sign-off tab to continue.'}
+            {doc.seal
+              ? 'This record is sealed in the immutable archive. Content is read-only.'
+              : 'Returned to the AI system for regeneration. Re-open the review in the sign-off tab to continue.'}
           </div>
         )}
 
@@ -263,7 +275,15 @@ export default function Viewer({ doc, selectedSegId, onSelectSeg, showDiff, setS
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {doc.segments.map((seg, i) => (
-                <Segment key={seg.id} seg={seg} index={i} doc={doc} selected={selectedSegId === seg.id} layers={layers} onSelect={onSelectSeg} />
+                <Segment
+                  key={seg.id}
+                  seg={seg}
+                  index={i}
+                  doc={doc}
+                  selected={selectedSegId === seg.id}
+                  layers={layers}
+                  onSelect={onSelectSeg}
+                />
               ))}
             </div>
           )}

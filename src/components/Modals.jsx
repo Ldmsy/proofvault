@@ -3,7 +3,7 @@ import { X, UploadCloud, Plug, Code2, Loader2, CheckCircle2, Stamp, Copy, Downlo
 import { Modal } from './ui.jsx';
 import { MCP_CONNECTORS } from '../data.js';
 
-const STEPS = ['Parsing record & extracting text', 'Validating C2PA manifest & signature', 'Running mis/disinformation & bias classifiers', 'Matching claims to source records'];
+const STEPS = ['Parsing record & extracting text', 'Validating C2PA manifest & signature', 'Running Opus 5.5 mis/disinformation & bias classifiers', 'Matching claims to source records'];
 
 export function IngestModal({ onClose, onIngest }) {
   const [mode, setMode] = useState('mcp');
@@ -211,7 +211,6 @@ export function SealModal({ doc, onClose }) {
   ];
 
   return (
-    // No backdrop dismiss: a double-click on "Approve & Seal" would otherwise close the certificate instantly.
     <Modal wide>
       <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-emerald-600 to-teal-700 px-6 py-6 text-white">
         <Stamp className="absolute -right-4 -top-4 h-32 w-32 rotate-12 opacity-15" />
@@ -241,7 +240,9 @@ export function SealModal({ doc, onClose }) {
           </div>
           <div className="text-right text-xs text-slate-500">
             Signed
-            <div className="font-mono text-slate-700 dark:text-slate-300">{new Date(seal.sealedAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}</div>
+            <div className="font-mono text-slate-700 dark:text-slate-300">
+              {new Date(seal.sealedAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}
+            </div>
           </div>
         </div>
 
