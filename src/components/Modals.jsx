@@ -3,7 +3,7 @@ import { X, UploadCloud, Plug, Code2, Loader2, CheckCircle2, Stamp, Copy, Downlo
 import { Modal } from './ui.jsx';
 import { MCP_CONNECTORS } from '../data.js';
 
-const STEPS = ['Parsing record & extracting text', 'Validating C2PA manifest & signature', 'Running Opus 5.5 mis/disinformation & bias classifiers', 'Matching claims to source records'];
+const STEPS = ['Demo: preparing sample record', 'Demo: showing C2PA metadata (not validated)', 'Demo: loading pre-authored classifier findings', 'Demo: preparing source-check review'];
 
 export function IngestModal({ onClose, onIngest }) {
   const [mode, setMode] = useState('mcp');
@@ -34,7 +34,7 @@ export function IngestModal({ onClose, onIngest }) {
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
         <div>
           <h2 className="font-semibold">Ingest AI-generated record</h2>
-          <p className="text-xs text-slate-500">Records are pre-screened before entering the IM review queue.</p>
+          <p className="text-xs text-slate-500">Demo animation loads a sample record; no file extraction, C2PA validation or classifiers run.</p>
         </div>
         {step < 0 && (
           <button onClick={onClose} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -77,7 +77,7 @@ export function IngestModal({ onClose, onIngest }) {
                     <div className="text-sm font-medium">{c.name}</div>
                     <div className="text-xs text-slate-500">{c.desc}</div>
                   </div>
-                  <span className="ml-auto rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">Connected</span>
+                  <span className="ml-auto rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">Demo</span>
                 </label>
               ))}
             </div>
@@ -87,7 +87,7 @@ export function IngestModal({ onClose, onIngest }) {
             <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 px-4 py-10 text-center hover:border-indigo-500 dark:border-slate-700">
               <UploadCloud className="h-8 w-8 text-slate-400" />
               <div className="mt-2 text-sm font-medium">{fileName || 'Click to choose a file'}</div>
-              <div className="text-xs text-slate-500">.docx, .pdf, .json, .txt — C2PA manifests read automatically</div>
+              <div className="text-xs text-slate-500">Demo only — selecting a file loads a sample, not its contents</div>
               <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files[0]?.name || '')} />
             </label>
           )}
@@ -112,7 +112,7 @@ export function IngestModal({ onClose, onIngest }) {
             onClick={start}
             className="mt-5 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-40"
           >
-            Ingest &amp; pre-screen
+            Ingest sample (demo)
           </button>
         </div>
       ) : (
@@ -276,7 +276,7 @@ export function SealModal({ doc, onClose }) {
         </dl>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {['ISO 15489-1 compliant', 'AS ISO 23081 metadata', 'NAA IM Standard', 'C2PA 2.1 manifest appended', 'WORM immutable'].map((t) => (
+          {['ISO 15489-1 checklist (demo)', 'AS ISO 23081 metadata (demo)', 'NAA IM checklist (demo)', 'C2PA metadata (demo)', 'ProofCore seal ledger · Ed25519-signed hash chain'].map((t) => (
             <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-3 w-3" /> {t}
             </span>

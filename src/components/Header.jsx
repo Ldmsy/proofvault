@@ -41,7 +41,7 @@ export default function Header({
               </span>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Aligned to NAA Information Management Standard · ISO 15489 · AS ISO 23081 · C2PA 2.1 · Powered by Claude Opus 5.5
+              Aligned to NAA Information Management Standard · ISO 15489 · AS ISO 23081 · C2PA 2.1 · Demo dashboard · optional server-side model extraction
             </div>
           </div>
         </div>
@@ -98,28 +98,28 @@ export default function Header({
       <div className="mt-3 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric
           icon={Inbox}
-          label="AI records pending review"
+          label="AI records pending review (demo)"
           value={metrics.pending}
           sub={`${metrics.queueOpen} in your queue · SLA 48h`}
           tone="bg-sky-500/15 text-sky-600 dark:text-sky-400"
         />
         <Metric
           icon={ShieldAlert}
-          label="Hallucinations / bias intercepted"
+          label="Findings intercepted (demo)"
           value={metrics.intercepted.toLocaleString()}
-          sub={`+${metrics.sessionIntercepted} this session · Opus 5.5 + IM rules`}
+          sub={`+${metrics.sessionIntercepted} this session · pre-authored demo findings`}
           tone="bg-red-500/15 text-red-600 dark:text-red-400"
         />
         <Metric
           icon={Fingerprint}
-          label="Avg. provenance score"
+          label="Avg. provenance score (demo)"
           value={`${metrics.provenance}/100`}
-          sub="Source-matched claims & C2PA media"
+          sub="Illustrative score · not the grounding report"
           tone="bg-violet-500/15 text-violet-600 dark:text-violet-400"
         />
         <Metric
           icon={Archive}
-          label="NAA / ISO 15489 compliance"
+          label="Compliance metric (demo)"
           value={`${metrics.compliance}%`}
           sub={`${metrics.sealed.toLocaleString()} records sealed to archive`}
           tone="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"

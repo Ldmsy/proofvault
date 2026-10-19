@@ -479,6 +479,6 @@ export const STORY_ACTS = [
     docId: 'doc-4092',
     tab: 'signoff',
     narrative:
-      'From council policies to clinical scribes (Patient #4092), Information Managers enforce ISO 15489 & C2PA standards before sealing records to WORM storage — stopping known patterns at the gate before they reach the public record.',
+      'From council policies to clinical scribes (Patient #4092), Information Managers enforce ISO 15489 & C2PA standards before sealing records to the ProofCore seal ledger — stopping known patterns at the gate before they reach the public record.',
   },
 ];

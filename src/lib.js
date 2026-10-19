@@ -12,7 +12,7 @@ export function prepareDoc(raw) {
     checklist: {},
     seal: null,
     audit: [
-      { at: raw.ingestedAt, actor: 'System', text: `Ingested via ${raw.channel}; C2PA manifest validated` },
+      { at: raw.ingestedAt, actor: 'System', text: `Ingested via ${raw.channel}; C2PA metadata shown (demo; not validated)` },
       {
         at: raw.ingestedAt,
         actor: 'ProofVault AI Pre-screen',
