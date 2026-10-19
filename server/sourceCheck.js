@@ -265,12 +265,23 @@ async function modelExtract(text) {
     claims: z.array(z.string().describe('One checkable claim as a standalone sentence. Keep record IDs, report titles, quotations and figures exactly as written.')),
   });
   const client = new Anthropic();
+  const model = process.env.CLAUDE_MODEL || 'claude-opus-5-5';
+  const system = 'Extract every factual claim from the record that cites a source, quotes someone, states a figure, or states a test result. Rewrite each as a standalone sentence. Do not judge whether claims are true.';
+  if (process.env.ANTHROPIC_BASE_URL) {
+    const response = await client.messages.create({ model, max_tokens: 8000,
+      system: system + '\nReturn only a JSON object (no prose or code fences) matching: ' + JSON.stringify(z.toJSONSchema(Out)),
+      messages: [{ role: 'user', content: text }],
+    }, { timeout: 60_000 });
+    if (response.stop_reason === 'refusal' || response.stop_reason === 'max_tokens') throw new Error('Incomplete model extraction');
+    const raw = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    return Out.parse(JSON.parse(raw)).claims;
+  }
   const res = await client.beta.messages.parse(
     {
-      model: 'claude-opus-5-5',
+      model,
       max_tokens: 8000,
       output_config: { effort: 'low', format: betaZodOutputFormat(Out) },
-      system: 'Extract every factual claim from the record that cites a source, quotes someone, states a figure, or states a test result. Rewrite each as a standalone sentence. Do not judge whether claims are true.',
+      system,
       messages: [{ role: 'user', content: text }],
     },
     { timeout: 60_000 }
