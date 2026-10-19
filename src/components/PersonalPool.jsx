@@ -15,15 +15,23 @@ function MultimodalCanvas({ artifact, selectedBoxId, onSelectBox, purified }) {
       {/* Top status bar inside visual frame */}
       <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/90 px-3 py-1.5 text-[10.5px]">
         <span className="inline-flex items-center gap-1.5 font-mono text-cyan-300">
-          <Cpu className="h-3.5 w-3.5" /> Cloud Opus 5.5 Vision-Language Inspector
+          <Cpu className="h-3.5 w-3.5" /> Claude Opus 5.5 Vision-Language Inspector
         </span>
         <span className={`rounded px-1.5 py-0.5 font-mono text-[9.5px] ${purified ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
-          {purified ? 'C2PA Context Restored' : 'C2PA Broken · 2 Visual Flags'}
+          {purified ? 'C2PA Context Restored' : `${visionBoxes.length} Visual Flag${visionBoxes.length === 1 ? '' : 's'}`}
         </span>
       </div>
 
       {/* Scene SVG artwork */}
-      <div className="relative h-48 w-full select-none overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <div
+        className={
+          artifact.imageUrl
+            ? 'relative mx-auto w-fit select-none overflow-hidden'
+            : 'relative h-48 w-full select-none overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900'
+        }
+      >
+        {artifact.imageUrl && <img src={artifact.imageUrl} alt={artifact.imageCaption} className="block max-h-72 w-auto max-w-full" />}
+
         {sceneType === 'bus-shelter' && (
           <svg viewBox="0 0 400 180" className="h-full w-full">
             <defs>
@@ -135,7 +143,7 @@ function MultimodalCanvas({ artifact, selectedBoxId, onSelectBox, purified }) {
           </svg>
         )}
 
-        {sceneType === 'custom-scan' && (
+        {sceneType === 'custom-scan' && !artifact.imageUrl && (
           <svg viewBox="0 0 400 180" className="h-full w-full">
             <rect width="400" height="180" fill="#0f172a" />
             <rect x="28" y="24" width="168" height="130" rx="8" fill="#1e293b" stroke="#475569" />
@@ -188,7 +196,7 @@ function MultimodalCanvas({ artifact, selectedBoxId, onSelectBox, purified }) {
         <div className="font-medium text-slate-200">{artifact.imageCaption}</div>
         {!purified && (
           <div className="mt-1 text-[10.5px] text-amber-300/90">
-            Click any bounding box on the image above to inspect Cloud Opus 5.5 pixel &amp; framing forensics.
+            Click any bounding box on the image above to inspect Claude Opus 5.5 pixel &amp; framing forensics.
           </div>
         )}
       </div>
@@ -201,32 +209,33 @@ function MultimodalCanvas({ artifact, selectedBoxId, onSelectBox, purified }) {
 function CustomScanModal({ onClose, onSubmit }) {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
-  const [mediaName, setMediaName] = useState('');
+  const [file, setFile] = useState(null);
   const [modalityType, setModalityType] = useState('Image + Article');
   const [scanning, setScanning] = useState(false);
   const [step, setStep] = useState(0);
+  const mediaName = file?.name || '';
 
   const steps = [
-    'Opus 5.5 Vision: Scanning image frames & C2PA 2.1 manifest...',
-    'Opus 5.5 OCR: Extracting embedded charts & document claims...',
-    'Cross-Modal Provenance: Tracing claims to bottom-of-pool sources...',
-    'Computing Surface Yellow Tinting vs Deep-Red Root Toxicity...',
+    'Sending content to Claude Opus 5.5 via the local ProofVault backend...',
+    'Claude is reading the text and attachment (vision / PDF)...',
+    'Separating surface takeaway, propagation layer and red roots...',
+    'Building the Contamination Pool (falls back to a simulated result on error)...',
   ];
 
-  const handleStart = (e) => {
+  const handleStart = async (e) => {
     e.preventDefault();
     setScanning(true);
     setStep(0);
     let current = 0;
     const id = setInterval(() => {
-      current += 1;
-      if (current >= steps.length) {
-        clearInterval(id);
-        onSubmit({ title, text, mediaName, modalityType });
-      } else {
-        setStep(current);
-      }
-    }, 550);
+      current = Math.min(current + 1, steps.length - 1);
+      setStep(current);
+    }, 1800);
+    try {
+      await onSubmit({ title, text, file, modalityType });
+    } finally {
+      clearInterval(id);
+    }
   };
 
   return (
@@ -234,7 +243,7 @@ function CustomScanModal({ onClose, onSubmit }) {
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            <Sparkles className="h-3.5 w-3.5" /> Cloud Opus 5.5 Multimodal Engine
+            <Sparkles className="h-3.5 w-3.5" /> Claude Opus 5.5 Multimodal Engine
           </div>
           <h2 className="mt-0.5 font-semibold">Scan Mixed-Media Content (Personal Lens)</h2>
         </div>
@@ -285,7 +294,8 @@ function CustomScanModal({ onClose, onSubmit }) {
               <input
                 type="file"
                 className="hidden"
-                onChange={(e) => setMediaName(e.target.files?.[0]?.name || '')}
+                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
             </label>
           </div>
@@ -502,7 +512,7 @@ export default function PersonalPool({
                 The Information Contamination Pool (信息溯源沉积池)
               </h1>
               <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-indigo-600 dark:text-indigo-300">
-                Cloud Opus 5.5 Multimodal Graph
+                Claude Opus 5.5 Multimodal Graph
               </span>
             </div>
             <p className="mt-0.5 text-[11.5px] text-slate-500">
@@ -826,10 +836,10 @@ export default function PersonalPool({
       {scanOpen && (
         <CustomScanModal
           onClose={() => setScanOpen(false)}
-          onSubmit={(payload) => {
+          onSubmit={async (payload) => {
+            await onAddCustomCase(payload);
             setScanOpen(false);
             setPurified(false);
-            onAddCustomCase(payload);
           }}
         />
       )}

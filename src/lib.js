@@ -126,140 +126,120 @@ export function wordDiff(a, b) {
   return out;
 }
 
-// Dynamic Opus 5.5 Multimodal Pool Builder for user-submitted custom text/media
-export function buildCustomPoolCase({ title, text, mediaName, modalityType }) {
-  const cleanTitle = title?.trim() || 'Custom Multimodal Submission — Live Opus 5.5 Audit';
-  const body =
-    text?.trim() ||
-    'Recent community survey shows 92% of residents oppose bike lanes and prefer redirecting funds, as seen in attached street photo.';
+// Offline stand-in used when the Claude call fails: a generic, clearly-labelled simulated analysis.
+function fallbackAnalysis(body, mediaName) {
   const hasNumbers = /\d+%|\$\d+|\d{4}/.test(body);
-  const id = `pool-custom-${Date.now()}`;
+  return {
+    surfaceTintScore: 71,
+    storyContext:
+      'Simulated result — the live Claude analysis was unavailable, so this pool shows a generic template rather than an analysis of your content.',
+    imageCaption: `Attached Media: ${mediaName || 'Mixed-Media Snapshot (C2PA Unverified)'}`,
+    visionBoxes: [
+      { x: 14, y: 20, w: 42, h: 36, tone: 'red', tag: 'Missing C2PA Provenance', finding: 'Template finding: visual attachments should carry C2PA Content Credentials before being trusted.' },
+      { x: 52, y: 48, w: 38, h: 34, tone: 'orange', tag: 'Visual-Text Mismatch', finding: 'Template finding: check whether the visual framing omits baseline comparison context.' },
+    ],
+    docExcerpt: {
+      title: 'Claim & Citation Extraction (simulated)',
+      stat: hasNumbers ? 'Quantitative claim without a primary register URI' : 'Broad generalisation without an attributable source',
+      warning: 'ISO 15489-1 §5.2.2 Reliability: confirm the primary source behind the surface narrative.',
+    },
+    surface: {
+      title: 'Plausible on the surface, but sources are unverified',
+      summary: 'Everyday readers encounter a cohesive package (visual + claim) that nudges opinion without exposing missing provenance.',
+      purifiedTitle: 'Neutralised & Source-Grounded Summary (IM Verified)',
+      purifiedSummary: 'Claims restricted to verifiable source records; unauthenticated attachments flagged as unverified context.',
+    },
+    middle: [
+      { label: 'Cross-Modal Amplification', title: 'Visual + Textual Confirmation Loop', modality: 'Multimodal Fusion', desc: 'Pairing an unverified image or chart with assertive prose lowers reader scepticism.' },
+      { label: 'Tone Smoothing', title: 'Confident Editorial Phrasing', modality: 'Language Framing', desc: 'Contested or incomplete evidence is presented as a settled conclusion.' },
+    ],
+    roots: [
+      { type: 'Disinformation / Provenance Risk', modality: 'Visual / Media Attachment', title: 'Unauthenticated Media Without C2PA Content Credentials', confidence: 50, evidence: 'Template — not derived from your content', detail: 'Media origin should be verified before it is used as evidence.', imTip: 'IM Know-How: Verify C2PA 2.1 manifest and original capture metadata before trusting visual evidence.' },
+      { type: 'Misinformation Source', modality: 'Textual Claim', title: 'Ungrounded Factual / Statistical Assertion', confidence: 50, evidence: 'Template — not derived from your content', detail: 'Key claims should be traceable to an audited primary record (ISO 15489 Reliability).', imTip: 'IM Know-How: Require source record URIs for every quantitative or causal claim.' },
+    ],
+  };
+}
+
+const clampPct = (n) => `${Math.max(0, Math.min(100, Math.round(n)))}%`;
+
+// Turns an analysis (from Claude or the offline fallback) into the Contamination Pool case shape.
+function assemblePoolCase({ title, body, mediaName, mediaUrl, modalityType }, a, source) {
+  const live = source.kind === 'live';
+  const engine = live ? 'Claude Opus 5.5' : 'Offline fallback (simulated)';
+  const middle = a.middle.slice(0, 2).map((m, i) => ({ id: `mid-${i + 1}`, layer: 'middle', ...m }));
+  const roots = a.roots.slice(0, 3).map((r, i) => ({ id: `r${i + 1}`, layer: 'root', ...r, c2pa: r.evidence, confidence: Math.round(r.confidence) }));
+  if (!middle.length) middle.push({ id: 'mid-1', layer: 'middle', label: 'Direct Reading', title: 'No amplification mechanism identified', modality: 'Language Framing', desc: 'The analysis found no notable propagation mechanism.' });
+  if (!roots.length) roots.push({ id: 'r1', layer: 'root', type: 'No material contamination found', modality: 'Textual Claim', title: 'No root problems identified', confidence: 0, c2pa: '—', detail: 'The analysis did not identify misinformation, disinformation or bias sources.', imTip: 'IM Know-How: Still confirm key facts against the authoritative record before archiving.' });
+  const tint = Math.max(0, Math.min(100, Math.round(a.surfaceTintScore)));
 
   return {
-    id,
-    title: cleanTitle,
-    subtitle: `${mediaName || 'Uploaded Visual/Doc'} + Text · Live Decomposed by Cloud Opus 5.5`,
-    persona: 'Custom Live Inspection (Opus 5.5)',
+    id: `pool-custom-${Date.now()}`,
+    title,
+    subtitle: `${mediaName || 'No attachment'} + Text · ${live ? 'Live analysis by Claude Opus 5.5' : 'Simulated — live analysis unavailable'}`,
+    persona: live ? 'Custom Live Inspection (Claude Opus 5.5)' : 'Custom Inspection (simulated fallback)',
     modalities: [mediaName ? `Media (${mediaName})` : `Visual (${modalityType})`, 'Document Metadata', 'Submitted Text'],
-    surfaceTintScore: 71,
+    surfaceTintScore: tint,
     linkedDocId: 'doc-pol26',
     linkedDocLabel: 'Cross-referenced against Enterprise IM Repository',
-    storyContext:
-      'Live decomposition by Cloud Opus 5.5 Multimodal Engine: separating the mildly persuasive yellow surface from its underlying red evidentiary and framing roots.',
+    storyContext: a.storyContext,
+    isFallback: !live,
+    fallbackReason: live ? null : source.reason,
     artifact: {
-      headline: cleanTitle,
-      sourceTag: `Live Scan · ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} AEDT · Cloud Opus 5.5`,
+      headline: title,
+      sourceTag: `${live ? 'Live Scan' : 'Fallback'} · ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} AEDT · ${engine}`,
       sceneType: 'custom-scan',
-      imageCaption: `Attached Media: ${mediaName || 'Mixed-Media Snapshot (C2PA Unverified)'}`,
-      visionBoxes: [
-        {
-          id: 'vb1',
-          x: '14%',
-          y: '20%',
-          w: '42%',
-          h: '36%',
-          tone: 'red',
-          tag: 'Opus 5.5 Vision · Missing C2PA Provenance',
-          finding: 'Visual attachment lacks cryptographic C2PA Content Credentials; context cropping & post-processing detected.',
-        },
-        {
-          id: 'vb2',
-          x: '52%',
-          y: '48%',
-          w: '38%',
-          h: '34%',
-          tone: 'orange',
-          tag: 'Opus 5.5 Cross-Modal · Visual-Text Mismatch',
-          finding: 'Visual framing selectively reinforces the text claim while omitting baseline comparison context.',
-        },
-      ],
-      docExcerpt: {
-        title: 'Opus 5.5 Claim & Citation Extraction',
-        stat: hasNumbers ? 'Detected quantitative claim without primary register URI' : 'Detected broad generalisation without attributable source',
-        warning: 'ISO 15489-1 §5.2.2 Reliability Alert: Unverified primary source behind surface narrative.',
-      },
+      imageUrl: mediaUrl || null,
+      imageCaption: a.imageCaption,
+      visionBoxes: a.visionBoxes.slice(0, 3).map((b, i) => ({ id: `vb${i + 1}`, ...b, x: clampPct(b.x), y: clampPct(b.y), w: clampPct(b.w), h: clampPct(b.h) })),
+      docExcerpt: a.docExcerpt,
       articleQuotes: [
         {
           id: 'q1',
           text: `"${body.slice(0, 180)}${body.length > 180 ? '…' : ''}"`,
-          tint: 'Soft Yellow Surface — reads fluently on the surface, but carries ungrounded assumptions from the red roots below.',
+          tint: 'Surface reading — fluent on the surface; see the roots below for what it rests on.',
         },
       ],
     },
     pool: {
-      surface: {
-        id: 'surf-1',
-        layer: 'surface',
-        label: 'Surface Takeaway · Tinted Yellow (微微泛黄)',
-        title: `"${cleanTitle}" — Plausible on the surface, but tinted by unverified roots`,
-        summary:
-          'Everyday readers encounter a cohesive multimodal package (visual + claim) that nudges opinion without exposing the missing provenance.',
-        purifiedTitle: 'Neutralised & Source-Grounded Summary (IM Verified)',
-        purifiedSummary:
-          'Claims restricted to verifiable source records; unauthenticated visual attachments flagged as unverified context per NAA & C2PA standards.',
-        tintLevel: '71% Surface Tinting (Opus 5.5 Live Score)',
-      },
-      middle: [
-        {
-          id: 'mid-1',
-          layer: 'middle',
-          label: 'Cross-Modal Amplification',
-          title: 'Visual + Textual Confirmation Loop',
-          modality: 'Multimodal Fusion',
-          desc: 'Combining an unverified image/chart with assertive prose lowers reader scepticism and masks source gaps.',
-        },
-        {
-          id: 'mid-2',
-          layer: 'middle',
-          label: 'Tone Smoothing',
-          title: 'Confident AI / Editorial Phrasing',
-          modality: 'Language Framing',
-          desc: 'Converts contested or incomplete evidence into smooth, authoritative-sounding conclusions.',
-        },
-      ],
-      roots: [
-        {
-          id: 'r1',
-          layer: 'root',
-          type: 'Disinformation / Provenance Risk',
-          modality: 'Visual / Media Attachment',
-          title: 'Unauthenticated Media Without C2PA Content Credentials',
-          confidence: 95,
-          c2pa: 'No urn:c2pa manifest attached · Origin unverified',
-          detail: 'Opus 5.5 detected missing origin signature and potential selective framing in the visual/document layer.',
-          imTip: 'IM Know-How: Verify C2PA 2.1 manifest and original capture metadata before trusting visual evidence.',
-        },
-        {
-          id: 'r2',
-          layer: 'root',
-          type: 'Misinformation Source',
-          modality: 'Textual Claim',
-          title: 'Ungrounded Factual / Statistical Assertion',
-          confidence: 92,
-          c2pa: '0 matching authoritative records in linked EDRMS',
-          detail: 'Key claims in the submitted text cannot be traced to an audited primary record (ISO 15489 Reliability).',
-          imTip: 'IM Know-How: Require source record URIs for every quantitative or causal claim.',
-        },
-        {
-          id: 'r3',
-          layer: 'root',
-          type: 'Bias Source',
-          modality: 'Framing & Selection',
-          title: 'Selective Context & Confirmation Bias',
-          confidence: 89,
-          c2pa: 'One-sided evidence selection detected by Opus 5.5',
-          detail: 'Omits countervailing demographic or operational context, steering the reader toward a predetermined conclusion.',
-          imTip: 'IM Know-How: Apply AS ISO 23081 contextual metadata checks to ensure balanced provenance.',
-        },
-      ],
+      surface: { id: 'surf-1', layer: 'surface', label: 'Surface Takeaway · Tinted Yellow (微微泛黄)', ...a.surface, tintLevel: `${tint}% Surface Tinting (${engine})` },
+      middle,
+      roots,
       edges: [
-        { from: 'r1', to: 'mid-1' },
-        { from: 'r2', to: 'mid-1' },
-        { from: 'r2', to: 'mid-2' },
-        { from: 'r3', to: 'mid-2' },
-        { from: 'mid-1', to: 'surf-1' },
-        { from: 'mid-2', to: 'surf-1' },
+        ...roots.flatMap((r, i) => [{ from: r.id, to: middle[i % middle.length]?.id }]),
+        ...middle.map((m) => ({ from: m.id, to: 'surf-1' })),
       ],
     },
   };
+}
+
+// Live Scan: ask the local backend (Claude Opus 5.5); on any failure fall back to the simulated template.
+export async function runLiveScan({ title, text, modalityType, file }) {
+  const cleanTitle = title?.trim() || 'Custom Multimodal Submission — Live Scan';
+  const body = text?.trim() || '';
+  const mediaName = file?.name || '';
+  const mediaUrl = file?.type?.startsWith('image/') ? URL.createObjectURL(file) : null;
+  const meta = { title: cleanTitle, body, mediaName, mediaUrl, modalityType };
+
+  try {
+    const media = file ? { name: file.name, type: file.type, data: await fileToBase64(file) } : null;
+    const res = await fetch('/api/pool-scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: cleanTitle, text: body, modalityType, media }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return assemblePoolCase(meta, json.analysis, { kind: 'live' });
+  } catch (err) {
+    return assemblePoolCase(meta, fallbackAnalysis(body, mediaName), { kind: 'fallback', reason: err.message });
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1]);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }

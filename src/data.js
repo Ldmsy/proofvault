@@ -452,12 +452,12 @@ export const STORY_ACTS = [
   {
     act: 'Act II',
     title: 'Opus 5.5 Dives to the Red Pool Floor',
-    persona: 'Cloud Opus 5.5 · Multimodal Provenance Engine',
+    persona: 'Claude Opus 5.5 · Multimodal Provenance Engine',
     mode: 'personal',
     poolCaseId: 'pool-subsidy',
     focusNodeId: 'r1',
     narrative:
-      'Maya drops the mixed media post into ProofVault\'s Personal Pool. Cloud Opus 5.5 X-rays the image, chart, and text — revealing that the yellow surface is being poisoned by 3 deep-red root toxins sitting at the bottom of the information pool.',
+      'Maya drops the mixed media post into ProofVault\'s Personal Pool. Claude Opus 5.5 X-rays the image, chart, and text — revealing that the yellow surface is being poisoned by 3 deep-red root toxins sitting at the bottom of the information pool.',
   },
   {
     act: 'Act III',
@@ -488,7 +488,7 @@ export const PERSONAL_POOL_CASES = [
   {
     id: 'pool-subsidy',
     title: 'Viral Mixed-Media Article: "Why Northern Corridor Suburbs Don\'t Need the $4.2M Subsidy"',
-    subtitle: 'News Photo + Embedded PDF Chart + Editorial Article · Analyzed by Cloud Opus 5.5',
+    subtitle: 'News Photo + Embedded PDF Chart + Editorial Article · Analyzed by Claude Opus 5.5',
     persona: 'Citizen / Councillor Reader View',
     modalities: ['Image (JPEG · No C2PA)', 'Document Chart (PDF Excerpt)', 'Article Text (Web)'],
     surfaceTintScore: 68,
@@ -623,7 +623,7 @@ export const PERSONAL_POOL_CASES = [
   {
     id: 'pool-clinical',
     title: 'Patient Take-Home Multimodal Pack: "Stress-Related Chest Tightness & 500mg Regimen"',
-    subtitle: 'Discharge Infographic + Voice-Note Transcript + Medication Card · Cloud Opus 5.5',
+    subtitle: 'Discharge Infographic + Voice-Note Transcript + Medication Card · Claude Opus 5.5',
     persona: 'Patient #4092 & Family Carer View',
     modalities: ['Infographic Card (PNG)', 'Ambient Audio Snippet', 'Patient Summary PDF'],
     surfaceTintScore: 74,
@@ -758,7 +758,7 @@ export const PERSONAL_POOL_CASES = [
   {
     id: 'pool-archive1956',
     title: 'Heritage Feature: "1956 Riverbend Flood Relief — AI HD Photo Restoration & Retrospective"',
-    subtitle: 'AI-Sharpened Archival Photograph + Museum Blog + Catalogue Note · Cloud Opus 5.5',
+    subtitle: 'AI-Sharpened Archival Photograph + Museum Blog + Catalogue Note · Claude Opus 5.5',
     persona: 'Historian, Journalist & Public Researcher View',
     modalities: ['Archival Photo (AI-Upscaled)', 'Catalogue Metadata', 'Magazine Feature'],
     surfaceTintScore: 63,

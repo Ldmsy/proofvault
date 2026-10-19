@@ -42,7 +42,7 @@ export default function Header({
               </span>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Aligned to NAA Information Management Standard · ISO 15489 · AS ISO 23081 · C2PA 2.1 · Powered by Cloud Opus 5.5
+              Aligned to NAA Information Management Standard · ISO 15489 · AS ISO 23081 · C2PA 2.1 · Powered by Claude Opus 5.5
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ import RightPanel from './components/RightPanel.jsx';
 import PersonalPool from './components/PersonalPool.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS, PERSONAL_POOL_CASES, STORY_ACTS } from './data.js';
-import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, buildCustomPoolCase } from './lib.js';
+import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, runLiveScan } from './lib.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -217,12 +217,13 @@ export default function App() {
     }
   };
 
-  const handleAddCustomPoolCase = (payload) => {
-    const customCase = buildCustomPoolCase(payload);
+  const handleAddCustomPoolCase = async (payload) => {
+    const customCase = await runLiveScan(payload);
     setPoolCases((prev) => [customCase, ...prev]);
     setSelectedPoolCaseId(customCase.id);
     setSelectedPoolNodeId('r1');
-    toast('Cloud Opus 5.5 decomposed custom media into the Contamination Pool');
+    if (customCase.isFallback) toast(`Live analysis unavailable (${customCase.fallbackReason}) — showing simulated result`, 'info');
+    else toast('Claude Opus 5.5 decomposed your content into the Contamination Pool');
   };
 
   return (
