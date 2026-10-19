@@ -9,11 +9,11 @@
 Sarah is a records officer at a council. A colleague used AI to draft a funding policy.
 
 1. **Before it is filed — the check.** Sarah runs the draft through ProofCore. The report says
-   48% of the text is grounded in council records and 52% is not. It points at the two
+   26% of the current demo text matches the sample records register and 74% is ungrounded. It points at the two
    problems: an "87% of households" figure that no record supports (the nearest real figure is
-   48%), and a "Productivity Commission 2025 Energy Hardship Report" that does not exist.
+   48%), and a "Productivity Commission 2025 Energy Hardship Report" that is not found in the sample register.
 2. **When it is filed — the lock.** She fixes or removes those sentences and approves. ProofCore
-   seals the final text with her Ed25519 key and chains it to the previous record.
+   seals the final text with a server-managed demo Ed25519 key for her reviewer ID and chains it to the previous record.
 3. **Years later — the proof.** An auditor asks whether the record was changed after approval.
    One verify call re-checks every hash and signature. If anyone changed a single character,
    it shows exactly which record broke.
@@ -42,7 +42,7 @@ not the screen. It can sit in front of an EDRMS, a mail gateway, or any AI tool.
 |---|---|---|
 | 1. Records register (context graph) | Citing reports that do not exist, superseded policies, agencies before they existed | `server/records.js`: which records exist, what they say, whether current, agency dates, facts in systems of record |
 | 2. Grounding check | Fabrication, altered quotes, inflated figures, results with no record | `server/sourceCheck.js`: the model may help find claims; verdicts come only from explainable rules. Character-weighted grounded / ungrounded / conflict %, like a similarity report |
-| 3. Seal ledger | Changing a record after approval, impersonating a reviewer | `server/ledger.js`: SHA-256 content hash, Ed25519 signature per reviewer, hash chain |
+| 3. Seal ledger | Detecting changes to signed records | `server/ledger.js`: SHA-256 content hash, Ed25519 signature per reviewer, hash chain |
 
 Ungrounded does not mean false. It means no record supports it, so a person must decide.
 
@@ -89,3 +89,11 @@ Optionally link the demo from the header: `<a href="/proofchain.html">`.
 
 "C2PA manifest validated", "WORM immutable" and the ingest progress animation are still
 simulated in the UI. Label them as demo, or soften the wording.
+
+## Verified integration
+
+The dashboard now calls the seal and source-check APIs. Grounding uses original draft text and caches by document ID and text. The current policy fixture scores 26% grounded, 74% ungrounded, 0% conflict: two of its seven sentences match the register; percentages are character-weighted, not probabilities of truth. The earlier 48% example was not the measured result for this fixture.
+
+C2PA, ingest classification and header metrics are labelled demo. The ledger is not WORM storage or reviewer identity authentication; there is no production authorization layer. Local activity history is UI state.
+
+Validation: `node tests/proofcore-api.mjs` (resets the disposable local ledger), `node tests/source-gateway.mjs`, `npm run build`. Gateway tests use a local mock, not a live model provider.

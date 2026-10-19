@@ -407,7 +407,7 @@ function SignOffTab({ doc, reviewerId, setReviewerId, onToggleCheck, onApprove, 
   const hints = {
     authenticity: openOf('misinfo') ? [false, `${openOf('misinfo')} mis/disinformation finding(s) unresolved`] : [true, 'All factual findings resolved'],
     bias: openOf('bias') ? [false, `${openOf('bias')} bias finding(s) unresolved`] : [true, 'All bias findings resolved'],
-    metadata: [true, 'C2PA manifest valid · model + prompt lineage captured'],
+    metadata: [true, 'Demo C2PA metadata · not cryptographically validated'],
     value: [true, doc.retention],
   };
   const allChecked = CHECKLIST.every((i) => doc.checklist[i.key]);
@@ -508,7 +508,7 @@ function SignOffTab({ doc, reviewerId, setReviewerId, onToggleCheck, onApprove, 
 
       <Card className="p-3">
         <div className="mb-2 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
-          <History className="h-3 w-3" /> Immutable audit trail
+          <History className="h-3 w-3" /> Session activity log
         </div>
         <ol className="space-y-2">
           {[...doc.audit].reverse().map((e, i) => (
