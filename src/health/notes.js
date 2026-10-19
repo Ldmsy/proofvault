@@ -3,15 +3,15 @@
 
 export const ME = {
   id: 'r3',
-  name: 'Priya Natarajan',
-  initials: 'PN',
+  name: 'Amy Fox',
+  initials: 'AF',
   role: 'Health Information Manager',
   org: 'Northside Hospital',
   unit: 'Health Information Services',
 };
 
 export const CLINICIANS = {
-  okafor: { name: 'Dr Rachel Okafor', role: 'GP Registrar, Outpatients' },
+  okafor: { name: 'Dr Kim', role: 'GP Registrar, Outpatients' },
   lindqvist: { name: 'Dr Erik Lindqvist', role: 'Consultant, General Medicine' },
   haddad: { name: 'Dr Samir Haddad', role: 'Emergency Physician' },
   wong: { name: 'Dr Mei Wong', role: 'Orthopaedic Registrar' },
@@ -29,14 +29,14 @@ const due = (hours) => new Date(Date.now() + hours * H).toISOString();
 export const NOTES = [
   {
     id: 'note-4092',
-    patient: { name: 'Margaret Ellis', mrn: 'NH-004092', dob: '1959-03-11', sex: 'F', ward: 'Outpatients · Cardiology clinic', allergies: [] },
+    patient: { name: 'Ann Lee', mrn: 'NH-004092', dob: '1959-03-11', sex: 'F', ward: 'Outpatients · Cardiology clinic', allergies: [] },
     type: 'Consultation note',
     author: 'okafor',
     scribe: { recordedAt: ago(5.2), minutes: 7 },
     receivedAt: ago(4.9),
     dueAt: due(3),
     segments: [
-      { id: 's1', section: 'Presenting complaint', text: 'Ms Ellis, 67, reports intermittent chest tightness over the past three weeks, typically on exertion and relieved by rest.' },
+      { id: 's1', section: 'Presenting complaint', text: 'Ms Lee, 67, reports intermittent chest tightness over the past three weeks, typically on exertion and relieved by rest.' },
       {
         id: 's2',
         section: 'Medications',
@@ -58,7 +58,7 @@ export const NOTES = [
         revised: 'ECG ordered; result pending at time of documentation. A cardiac cause has not been excluded.',
         flag: { type: 'misinfo', severity: 'High', title: 'ECG result with no ECG on file', explain: 'No ECG was uploaded for this visit. In the recording, the doctor only says an ECG will be organised — the "normal" result and conclusion were invented.' },
         evidence: {
-          transcript: [{ t: '06:31', who: 'Dr Okafor', text: "We'll organise an ECG and some bloods before your next visit." }],
+          transcript: [{ t: '06:31', who: 'Dr Kim', text: "We'll organise an ECG and some bloods before your next visit." }],
           records: [{ label: 'ECG system · 14 Oct 2026', value: 'No tracing uploaded', verdict: 'missing' }],
         },
         pattern: 'p.cardio.ecg',
@@ -71,7 +71,7 @@ export const NOTES = [
         revised: 'Patient appeared anxious. Differential includes stable angina, reflux and musculoskeletal pain; cardiac work-up to be completed first.',
         flag: { type: 'bias', severity: 'High', title: 'Assumption based on age and gender', explain: 'The doctor never said this. Putting chest pain down to stress "in women of her age" is a known cause of missed heart disease in women.' },
         evidence: {
-          transcript: [{ t: '08:12', who: 'Dr Okafor', text: 'Let’s rule out the heart first, then we can look at other causes.' }],
+          transcript: [{ t: '08:12', who: 'Dr Kim', text: 'Let’s rule out the heart first, then we can look at other causes.' }],
           records: [],
         },
         pattern: 'p.cardio.gender',
@@ -193,7 +193,7 @@ export const NOTES = [
   },
   {
     id: 'note-6400',
-    patient: { name: 'David Kim', mrn: 'NH-006400', dob: '1983-09-08', sex: 'M', ward: 'Outpatients · Endocrine clinic', allergies: ['Sulfonamides — rash'] },
+    patient: { name: 'David Park', mrn: 'NH-006400', dob: '1983-09-08', sex: 'M', ward: 'Outpatients · Endocrine clinic', allergies: ['Sulfonamides — rash'] },
     type: 'Consultation note',
     author: 'murphy',
     scribe: { recordedAt: ago(1.2), minutes: 9 },
