@@ -172,6 +172,24 @@ export function SealModal({ doc, onClose }) {
   const seal = doc.seal;
   const [copied, setCopied] = useState(false);
 
+  const [verification, setVerification] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const verify = async (simulate = false) => {
+    setVerifying(true); setVerifyError(''); setVerification(null);
+    try {
+      const original = seal.sealedText;
+      const text = original ? (original[0] === 'X' ? 'Y' : 'X') + original.slice(1) : null;
+      if (simulate && !text) throw new Error('Sealed text snapshot unavailable');
+      const res = await fetch('/api/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(simulate ? { tamper: { archiveId: seal.archiveId, text } } : {}) });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Verification failed');
+      setVerification({ ...result, simulated: simulate });
+    } catch (err) { setVerifyError(err.message); }
+    finally { setVerifying(false); }
+  };
+
   const copy = async () => {
     await navigator.clipboard.writeText(seal.hash);
     setCopied(true);
@@ -184,6 +202,7 @@ export function SealModal({ doc, onClose }) {
       record_title: doc.title,
       record_id: doc.id,
       content_sha256: seal.hash,
+      previous_seal: seal.prevHash,
       c2pa_parent_manifest: doc.c2pa.manifest,
       reviewer: seal.reviewer,
       signature: { algorithm: 'Ed25519', key_id: seal.reviewer.keyId, value: seal.signature },
@@ -204,6 +223,7 @@ export function SealModal({ doc, onClose }) {
     ['Archive record ID', seal.archiveId],
     ['Content hash (SHA-256)', seal.hash],
     ['Reviewer signature (Ed25519)', seal.signature],
+    ['Previous seal', seal.prevHash],
     ['Signing key', seal.reviewer.keyId],
     ['Parent C2PA manifest', doc.c2pa.manifest],
     ['Retention & disposal', doc.retention],
@@ -261,6 +281,23 @@ export function SealModal({ doc, onClose }) {
               <CheckCircle2 className="h-3 w-3" /> {t}
             </span>
           ))}
+        </div>
+
+        <div className="mt-4 space-y-2 text-xs" aria-live="polite">
+          <div className="flex flex-wrap gap-2">
+            <button disabled={verifying} onClick={() => verify()} className="rounded border border-slate-300 px-3 py-2 dark:border-slate-600 disabled:opacity-40">Verify chain</button>
+            <button disabled={verifying} onClick={() => verify(true)} className="rounded border border-slate-300 px-3 py-2 dark:border-slate-600 disabled:opacity-40">Simulate one-character edit</button>
+          </div>
+          {verifying && <p>Verifying hashes and signatures…</p>}
+          {verifyError && <p role="alert" className="text-red-500">{verifyError}</p>}
+          {verification && <>
+            <p className={verification.ok ? 'text-emerald-500' : 'text-amber-500'}>
+              {verification.ok ? `Chain intact (${verification.length} records)` : `Broken at #${verification.brokenAt}: ${verification.records.find(r => r.index === verification.brokenAt)?.reason}`}
+            </p>
+            {verification.simulated && <p>Simulation only — the stored ledger is unchanged.</p>}
+            {verification.records.filter(r => r.downstreamOfBreak).map(r => <p key={r.archiveId}>#{r.index}: downstreamOfBreak — {r.title}</p>)}
+            {!verification.ok && !verification.records.some(r => r.downstreamOfBreak) && <p>No later records in this chain.</p>}
+          </>}
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
