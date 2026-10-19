@@ -22,14 +22,14 @@ const ACTION_TEXT = {
 const ACTION_STATUS = { fix: 'fixed', escalate: 'escalated', reject: 'rejected', verify: 'verified' };
 
 export default function App() {
-  const [docs, setDocs] = useState(() => { const incoming = new URLSearchParams(location.search).get('review') === 'bank' ? readBankHandoff(sessionStorage) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
+  const [docs, setDocs] = useState(() => { const incoming = ['bank','hospital'].includes(new URLSearchParams(location.search).get('review')) ? readBankHandoff(sessionStorage) : null; return incoming ? [incoming, ...INITIAL_DOCS.map(prepareDoc)] : INITIAL_DOCS.map(prepareDoc); });
   const [selectedId, setSelectedId] = useState(() => docs[0].id);
   const [selectedSegId, setSelectedSegId] = useState(null);
   const [selectedCitationId, setSelectedCitationId] = useState(null);
   const [tab, setTab] = useState('audit');
   const [showDiff, setShowDiff] = useState(false);
   const [layers, setLayers] = useState({ misinfo: true, bias: true });
-  const [reviewerId, setReviewerId] = useState(REVIEWERS[0].id);
+  const [reviewerId, setReviewerId] = useState(() => docs[0].handoff?.scenario === 'hospital' ? 'r3' : REVIEWERS[0].id);
   const [modal, setModal] = useState(null); // 'ingest' | 'reject' | 'seal'
   const [sealing, setSealing] = useState(false);
   const [detailed, setDetailed] = useState(false);

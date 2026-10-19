@@ -7,3 +7,6 @@ const doc=readBankHandoff(storage);assert.equal(doc.id,'bank-review-test');asser
 entries.set(`${HANDOFF_KEY}.state`,JSON.stringify({...doc,segStatus:{s1:'fixed'}}));assert.equal(readBankHandoff(storage).segStatus.s1,'fixed');
 entries.set(HANDOFF_KEY,'malformed');assert.equal(readBankHandoff(storage),null);
 console.log('PASS: handoff preserves original text, starts unapproved, restores same-file progress, rejects malformed data');
+
+entries.set(HANDOFF_KEY,JSON.stringify({version:1,scenario:'hospital',id:'hospital-review-test',createdAt:'2026-10-19T00:00:00Z',paragraphs:['Patient is taking metoprolol 500 mg.','ECG showed normal results.'],report:{claims:[]}}));
+const hospital=readBankHandoff(storage);assert.equal(hospital.handoff.scenario,'hospital');assert.equal(hospital.category,'Clinical');assert(hospital.segments[0].revised.includes('clinician must verify'));assert(hospital.segments[1].revised.includes('verification is pending'));console.log('PASS: hospital handoff preserves clinical uncertainty');
