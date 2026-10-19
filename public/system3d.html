@@ -116,7 +116,7 @@ const LAYERS=[
   {id:'nodes',name:'三节点共识',file:'public/proofchain.html',desc:'演示页中的扩展：国家档案馆、机构、行业协会各存一份，以 2/3 多数为准。'}]}
 ];
 const JOURNEYS={
- check:{title:'① 安检：入档前查真',path:['doc','queue','a-check','reg','rules','pct','viewer'],steps:['AI 写好一份政策草稿','进入审核队列','前端调用 /api/check-sources','对照档案登记册','7 条规则逐句判定','算出有依据 48%、无依据 52%','逐句标在原文上，档案员处理问题句']},
+ check:{title:'① 安检：入档前查真',path:['doc','queue','a-check','reg','rules','pct','viewer'],steps:['AI 写好一份政策草稿','进入审核队列','前端调用 /api/check-sources','对照档案登记册','7 条规则逐句判定','当前仪表盘草稿实测：有依据 26%、无依据 74%','逐句标在原文上，档案员处理问题句']},
  seal:{title:'② 上锁：批准后封存',path:['signoff','a-seal','hash','sig','chain','cert'],steps:['清单全部勾选，档案员批准','前端调用 /api/seal','计算最终文本的 SHA-256 指纹','用档案员的 Ed25519 密钥签名','接到哈希链账本末尾','生成封存证书']},
  verify:{title:'③ 验锁：多年后核验',path:['cert','a-verify','chain','hash','sig','cert'],steps:['审计员拿着封存证书','调用 /api/verify','逐个重算账本中的记录','对比内容指纹','验证审核人签名','结果：完好，或指出断在哪一份']},
  map:{title:'溯源地图：这条说法属于哪种套路',path:['map','a-tax','tax','map'],steps:['档案员选中一条可疑说法','调用 /api/taxonomy-match','Claude 在模式库中逐层匹配，代码校验路径','地图点亮匹配到的已知模式和管控措施']}
