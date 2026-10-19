@@ -29,7 +29,7 @@ Open `http://localhost:5173` in your browser.
 
 ### Live Scan with Claude Opus 5.5 (optional)
 
-The **`+ Live Scan`** button sends your headline, text and an optional image (JPG/PNG/GIF/WebP) or PDF to a small backend built into the Vite dev server (`server/poolScanPlugin.js`), which calls **Claude Opus 5.5** with structured output and returns a Contamination Pool.
+The **`+ Live Scan`** button sends your headline, text and an optional image (JPG/PNG/GIF/WebP) or PDF to a small backend (`server/poolScan.js` — mounted into the Vite dev server locally, and deployed as the Vercel Function `api/pool-scan.js`), which calls **Claude Opus 5.5** with structured output and returns a Contamination Pool.
 
 ```bash
 cp .env.example .env.local   # then put your key after ANTHROPIC_API_KEY=
@@ -38,6 +38,7 @@ npm run dev
 
 - The API key is read only by the local server and is never bundled into the browser code; `.env.local` is git-ignored.
 - If the call fails (no key, no network, timeout), the app automatically shows a **clearly labelled simulated result** so the demo never stalls.
+- On Vercel, set `ANTHROPIC_API_KEY` in the project's Environment Variables. Uploads there are limited to about 3 MB (Vercel's 4.5 MB request limit).
 - The built-in preset cases and enterprise records are pre-scripted demo data; only Live Scan runs a real model analysis.
 
 ---
