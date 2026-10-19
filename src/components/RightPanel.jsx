@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import GroundingCheck from './GroundingCheck.jsx';
 import {
   ScanSearch, Network, ClipboardCheck, Wand2, UserCheck, XCircle, Undo2, ChevronLeft, ChevronRight, BookOpen, Scale,
   FileSearch, Gauge, CheckCircle2, AlertTriangle, ShieldCheck, Stamp, RotateCcw, History, BadgeCheck, Cpu, Hash, KeyRound, Link2, PenLine,
@@ -549,6 +550,7 @@ export default function RightPanel(props) {
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3 scroll-thin">
+        <GroundingCheck doc={doc} />
         {tab === 'audit' && <AuditTab {...props} locked={locked} />}
         {tab === 'graph' && <GraphTab {...props} />}
         {tab === 'signoff' && <SignOffTab {...props} />}
