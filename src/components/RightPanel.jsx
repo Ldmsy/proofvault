@@ -15,7 +15,7 @@ const TABS = [
 
 /* ───────────────────────── Audit insight ───────────────────────── */
 
-function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, onUpdateRevision, locked }) {
+function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, onUpdateRevision, onTraceClaim, locked }) {
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
 
@@ -200,6 +200,13 @@ function AuditTab({ doc, selectedSegId, onSelectSeg, onSegAction, onUpdateRevisi
           )}
         </div>
       )}
+
+      <button
+        onClick={() => onTraceClaim(seg.text, doc.category)}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-500/40 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-500/10 dark:text-indigo-300"
+      >
+        <Network className="h-3.5 w-3.5" /> Trace in Provenance Map
+      </button>
 
       {!locked && (st === 'open' || st === 'escalated') && (
         <div className="grid gap-2">

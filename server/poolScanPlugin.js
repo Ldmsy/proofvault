@@ -1,5 +1,8 @@
-// Local backend for Live Scan: mounts POST /api/pool-scan on the Vite dev and preview servers.
+// Local backend: mounts the Live Scan and Provenance Map endpoints on the Vite dev and preview servers.
 import { handlePoolScan } from './poolScan.js';
+import { handleTaxonomyMatch } from './taxonomyMatch.js';
+
+const ROUTES = { '/api/pool-scan': handlePoolScan, '/api/taxonomy-match': handleTaxonomyMatch };
 
 const MAX_BODY_BYTES = 20 * 1024 * 1024;
 
@@ -27,7 +30,8 @@ function readJson(req) {
 
 function middleware() {
   return async (req, res, next) => {
-    if (req.url !== '/api/pool-scan') return next();
+    const handler = ROUTES[req.url];
+    if (!handler) return next();
     const send = (status, body) => {
       res.statusCode = status;
       res.setHeader('Content-Type', 'application/json');
@@ -35,7 +39,7 @@ function middleware() {
     };
     if (req.method !== 'POST') return send(405, { error: 'Use POST' });
     try {
-      const { status, body } = await handlePoolScan(await readJson(req));
+      const { status, body } = await handler(await readJson(req));
       send(status, body);
     } catch (err) {
       send(err.status ?? 500, { error: err.message });

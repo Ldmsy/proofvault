@@ -31,3 +31,7 @@ body { @apply bg-slate-100 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 
 .animate-pool-glow {
   animation: pv-pulse-slow 3.2s ease-in-out infinite;
 }
+
+/* Provenance Map: matched path draws itself downward */
+@keyframes pv-draw-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.pv-draw { stroke-dasharray: 1; stroke-dashoffset: 0; animation: pv-draw-in .8s ease-out; }

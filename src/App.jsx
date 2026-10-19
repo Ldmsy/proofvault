@@ -5,6 +5,7 @@ import Queue from './components/Queue.jsx';
 import Viewer from './components/Viewer.jsx';
 import RightPanel from './components/RightPanel.jsx';
 import PersonalPool from './components/PersonalPool.jsx';
+import ProvenanceMap from './components/ProvenanceMap.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS, PERSONAL_POOL_CASES, STORY_ACTS } from './data.js';
 import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, runLiveScan } from './lib.js';
@@ -34,7 +35,8 @@ export default function App() {
   const [ingestCount, setIngestCount] = useState(0);
 
   // New state for Personal Multimodal Contamination Pool (Opus 5.5) & 4-Act Story Mode
-  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'enterprise'
+  const [viewMode, setViewMode] = useState('personal'); // 'personal' | 'enterprise' | 'map'
+  const [mapIncoming, setMapIncoming] = useState(null);
   const [poolCases, setPoolCases] = useState(PERSONAL_POOL_CASES);
   const [selectedPoolCaseId, setSelectedPoolCaseId] = useState(PERSONAL_POOL_CASES[0].id);
   const [selectedPoolNodeId, setSelectedPoolNodeId] = useState('r1');
@@ -217,6 +219,12 @@ export default function App() {
     }
   };
 
+  const LENS_BY_CATEGORY = { Clinical: 'healthcare', Policy: 'government', Corporate: 'enterprise', Service: 'enterprise' };
+  const traceClaim = (claim, category) => {
+    setMapIncoming({ claim, lens: LENS_BY_CATEGORY[category], nonce: Date.now() });
+    setViewMode('map');
+  };
+
   const handleAddCustomPoolCase = async (payload) => {
     const customCase = await runLiveScan(payload);
     setPoolCases((prev) => [customCase, ...prev]);
@@ -286,7 +294,9 @@ export default function App() {
       )}
 
       {/* ──────── Main Workspace: Personal Multimodal Contamination Pool OR Enterprise 3-Column Gate ──────── */}
-      {viewMode === 'personal' ? (
+      {viewMode === 'map' ? (
+        <ProvenanceMap incoming={mapIncoming} />
+      ) : viewMode === 'personal' ? (
         <PersonalPool
           cases={poolCases}
           selectedCaseId={selectedPoolCaseId}
@@ -329,6 +339,7 @@ export default function App() {
             onSelectSeg={selectSeg}
             onSegAction={segAction}
             onUpdateRevision={updateRevision}
+            onTraceClaim={traceClaim}
             selectedCitationId={selectedCitationId}
             setSelectedCitationId={setSelectedCitationId}
             onJump={jumpToSeg}

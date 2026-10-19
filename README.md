@@ -18,6 +18,15 @@ Because **information is like a water pool**:
 
 ---
 
+## 🕸️ Provenance Map (layered pattern database)
+
+A claim sinks through ProofVault's pattern database layer by layer — **Domain → Sub-domain → Topic → Known pattern** (`src/taxonomy.js`, 7 domains, demo data). At each layer the best-fitting node lights up and is linked to the one above; unrelated branches fade into the background. The final node shows the known mis/disinformation or bias pattern, how often it has appeared, and the IM control to apply. Claims that match nothing are reported as novel and routed to a human verifier.
+
+- Lenses: **Personal · Enterprise · Government · Healthcare**, each with example claims; any flagged paragraph in the Enterprise IM Gate can be sent to the map with **Trace in Provenance Map**.
+- Matching: **Claude Opus 5.5** walks the tree (`server/taxonomyMatch.js`, `api/taxonomy-match.js`); its path is validated against the tree. Without a key or on error, a local keyword matcher is used and the map says so.
+
+---
+
 ## 🚀 Quick Start / 运行方式
 
 ```bash

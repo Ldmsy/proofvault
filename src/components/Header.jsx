@@ -1,4 +1,4 @@
-import { ShieldCheck, Inbox, ShieldAlert, Fingerprint, Archive, Plus, Sun, Moon, Waves, Building2, BookOpen, Sparkles } from 'lucide-react';
+import { Network, ShieldCheck, Inbox, ShieldAlert, Fingerprint, Archive, Plus, Sun, Moon, Waves, Building2, BookOpen, Sparkles } from 'lucide-react';
 import { Card } from './ui.jsx';
 
 function Metric({ icon: Icon, label, value, sub, tone }) {
@@ -61,6 +61,18 @@ export default function Header({
             >
               <Building2 className="h-3.5 w-3.5" />
               Enterprise IM Gate
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangeViewMode('map')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                viewMode === 'map'
+                  ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              <Network className="h-3.5 w-3.5" />
+              Provenance Map
             </button>
             <button
               type="button"
