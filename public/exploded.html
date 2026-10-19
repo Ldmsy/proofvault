@@ -1,0 +1,188 @@
+<title>档链爆炸图</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<style>
+/* Layout: an exploded axonometric of the five system layers. Attacks enter from the left in red, our defences answer on the right in green; a detail panel below reads out the selected layer. */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --ink:#121a24; --muted:#566273; --line:#d3dae2;
+  --slab-top:#ffffff; --slab-l:#d9e0e8; --slab-r:#c5cfda; --slab-stroke:#8794a3;
+  --atk:#c23a2e; --atk-soft:#fde6e3; --def:#137a52; --def-soft:#dcf2e7; --sel:#3d4fd6;
+  --f-display:"Noto Serif SC","Songti SC",serif; --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1016; --surface:#141b24; --ink:#e3e9f0; --muted:#95a2b2; --line:#283240;
+  --slab-top:#1c2632; --slab-l:#141c26; --slab-r:#0f161e; --slab-stroke:#4b5a6b;
+  --atk:#ff7b6c; --atk-soft:#3a1915; --def:#5fd6a0; --def-soft:#10301f; --sel:#9aa6ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1016; --surface:#141b24; --ink:#e3e9f0; --muted:#95a2b2; --line:#283240;
+  --slab-top:#1c2632; --slab-l:#141c26; --slab-r:#0f161e; --slab-stroke:#4b5a6b;
+  --atk:#ff7b6c; --atk-soft:#3a1915; --def:#5fd6a0; --def-soft:#10301f; --sel:#9aa6ff; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14.5px;line-height:1.65}
+.wrap{max-width:1200px;margin:0 auto;padding-block:30px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,5vw,48px);line-height:1.1;margin:6px 0 8px;text-wrap:balance}
+h1 .a{color:var(--atk)} h1 .d{color:var(--def)}
+.lede{margin:0;max-width:46em;color:var(--muted);font-size:15.5px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+button{font:inherit;font-size:13.5px;cursor:pointer;padding:7px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;border-radius:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.bar label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.bar input[type=range]{width:160px;accent-color:var(--ink)}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:8px;overflow-x:auto}
+.stage svg{display:block;width:100%;min-width:920px;height:auto}
+.slab{cursor:pointer}
+.slab .top{fill:var(--slab-top);stroke:var(--slab-stroke);stroke-width:1.2}
+.slab .l{fill:var(--slab-l);stroke:var(--slab-stroke);stroke-width:1.2}
+.slab .r{fill:var(--slab-r);stroke:var(--slab-stroke);stroke-width:1.2}
+.slab.sel .top{stroke:var(--sel);stroke-width:3}
+.slab:focus{outline:none}
+.slab:focus-visible .top{stroke:var(--sel);stroke-width:3}
+.slab .nm{font:700 15px var(--f-body);fill:var(--ink)}
+.slab .sub{font:11.5px var(--f-mono);fill:var(--muted)}
+.card rect{stroke-width:1.5}
+.card.atk rect{fill:var(--atk-soft);stroke:var(--atk)}
+.card.def rect{fill:var(--def-soft);stroke:var(--def)}
+.card .t{font:700 12.5px var(--f-body)}
+.card.atk .t{fill:var(--atk)} .card.def .t{fill:var(--def)}
+.card .li{font:12.5px var(--f-body);fill:var(--ink)}
+.wire{fill:none;stroke-width:1.8}
+.wire.atk{stroke:var(--atk);stroke-dasharray:6 4}
+.wire.def{stroke:var(--def)}
+.dim{opacity:.18}
+.cards{transition:opacity .4s}
+.head{font:700 13px var(--f-body);letter-spacing:.1em}
+.head.atk{fill:var(--atk)} .head.def{fill:var(--def)}
+.flowlab{font:11.5px var(--f-mono);fill:var(--muted)}
+.detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:820px){.detail{grid-template-columns:minmax(0,1fr)}}
+.dcol{border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;border:1px solid}
+.dcol.atk{background:var(--atk-soft);border-color:var(--atk)}
+.dcol.def{background:var(--def-soft);border-color:var(--def)}
+.dcol h3{margin:0;font-size:14px;letter-spacing:.06em}
+.dcol.atk h3{color:var(--atk)} .dcol.def h3{color:var(--def)}
+.item b{display:block;font-size:14.5px}
+.item span{font-size:13.5px;color:var(--muted)}
+.dtitle{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dtitle h2{font-family:var(--f-display);font-size:24px;margin:0}
+.dtitle .k{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.limits{background:var(--surface);border:1px dashed var(--slab-stroke);border-radius:14px;padding:14px 16px;font-size:13.5px;color:var(--muted)}
+.limits b{color:var(--ink)}
+.limits ul{margin:6px 0 0;padding-left:18px}
+.small{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.cards{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">RIMPA Global Hackathon 2026 · 系统爆炸图</div>
+    <h1>五层结构：<span class="a">攻击从哪里来</span>，<span class="d">我们怎么挡</span></h1>
+    <p class="lede">把档链系统拆成五层，从 AI 生成内容的入口，一直到最底层的档案链。每一层左边是会发生的攻击或错误，右边是我们在这一层做的防御和分析。点任意一层查看细节。</p>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="视图控制">
+    <button class="primary" id="explode">展开爆炸图</button>
+    <label for="gap">爆炸程度 <input type="range" id="gap" min="0" max="100" value="100"></label>
+    <div class="seg" role="group" aria-label="显示">
+      <button data-v="all" aria-pressed="true">攻防全部</button><button data-v="atk" aria-pressed="false">只看攻击</button><button data-v="def" aria-pressed="false">只看防御</button>
+    </div>
+  </div>
+
+  <div class="stage"><svg id="svg" role="img" aria-label="档链系统五层爆炸图"></svg></div>
+
+  <section aria-live="polite" style="display:flex;flex-direction:column;gap:12px">
+    <div class="dtitle"><h2 id="dName"></h2><span class="k" id="dTech"></span></div>
+    <div class="detail">
+      <div class="dcol atk"><h3>攻击与错误</h3><div id="dAtk" style="display:flex;flex-direction:column;gap:10px"></div></div>
+      <div class="dcol def"><h3>我们的防御与分析</h3><div id="dDef" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    </div>
+  </section>
+
+  <div class="limits"><b>系统的边界（评委一定会问）</b>
+    <ul>
+      <li>档案链证明“入档后没被改过”，不证明内容本来就真。所以必须先过查真引擎。</li>
+      <li>查真只能对照登记册里有的记录。登记册本身错了或缺了，系统会标为“无依据”交给人，而不是假装知道。</li>
+      <li>偏见和措辞问题需要判断，规则只能提示，最后由档案员决定。</li>
+      <li>图片、音视频的深度伪造不在本原型范围内，后续可接 C2PA 内容凭证。</li>
+    </ul>
+  </div>
+  <p class="small">演示数据均为虚构。图中的“演示证据”来自我们原型中的实际运行结果。</p>
+</div>
+
+<script>
+const L=[
+ {name:'AI 输入层',tech:'AI 助手 · 生成式模型',
+  atk:[['编造来源','AI 凭印象拼出不存在的报告、书名或档号，语气笃定。'],['夸大的统计','给出没有出处的百分比，例如“87% 的家庭已获补贴”。'],['被恶意利用','有人借 AI 批量制造“官方证实”式的虚假信息。']],
+  def:[['档案 AI 模式','只依据档案登记册回答，每句话标注档号；查不到就说找不到，不许编。'],['每个回答附查真小票','回答生成后立即计算有依据、无依据、冲突的比例。'],['演示证据','同一问题：档案 AI 有依据 100%；普通 AI 有依据 0%，被抓出数字不符、引语查无此源。']]},
+ {name:'查真引擎',tech:'权威记录登记册 + 7 条确定性规则',
+  atk:[['篡改引语','把机构原话改几个词，意思就变了。'],['数字被放大','药量 50 mg 被记成 500 mg，扩大 10 倍。'],['引用过时文件','引用已被替代的旧政策当作现行依据。'],['冒用不存在的机构','引用某机构在其成立之前发布的文件。']],
+  def:[['语境图谱','登记册记录每份文件是否现行、被谁替代，每个机构何时成立。'],['AI 找、规则判','模型只负责找出可核查的陈述，真假由可解释的规则决定，每个判定都能点回原文。'],['演示证据','对三份演示文档独立抓出 5 处问题：10 倍药量、无记录的心电图结果、无出处的 87%、不存在的报告、捏造的机构引语。']]},
+ {name:'查真报告与人工审核',tech:'百分比报告 · 逐句标色 · 文件痕迹',
+  atk:[['无依据内容被悄悄放行','看起来通顺的段落混在真内容中间，没人注意。'],['带偏见的措辞','把某类人群一概而论，或用情绪化语言掩盖事实。']],
+  def:[['像查重一样查真','按字数给出有依据、无依据、冲突的百分比，列出匹配来源。'],['无依据必须由人处理','更正、删除或标注“未核实”之后才允许入档。'],['文件痕迹','AI 生成、核查结果、谁改了几句，全过程写进记录，痕迹本身也被封存。']]},
+ {name:'数字封印',tech:'SHA-256 指纹 · Ed25519 签名',
+  atk:[['入档后偷改内容','把 31 人改成 3100 人，或只加一个空格。'],['冒充审核人','把审核人改成别人，伪造“已审核”。'],['改日期、改元数据','让记录看起来出自另一个时间或机构。']],
+  def:[['内容指纹','改动任何一个字，SHA-256 指纹完全不同。'],['审核人签名','每位审核人持有真实的 Ed25519 密钥，签名无法冒充。'],['演示证据','把预算 $4.2 million 改成 $42 million，内容哈希和签名同时验证失败。']]},
+ {name:'档案链',tech:'默克尔树 · 区块哈希链 · 三节点共识',
+  atk:[['管理员连同哈希一起改','单一数据库的管理员可以把内容和指纹一起换掉。'],['单点被攻破','一台服务器被入侵，档案就被改写。']],
+  def:[['默克尔根','每个区块把所有记录的指纹合并成一个根，任何一条变了都能定位。'],['三个机构各存一份','国家档案馆、机构档案室、行业协会节点，以 2/3 多数为准，可从多数节点恢复。'],['演示证据','篡改机构节点上的一条记录：其余两个节点立即判定该节点失败，并指出是记录 REC-001。']]}
+];
+const svg=document.getElementById('svg');const NS='http://www.w3.org/2000/svg';
+let gap=1,view='all',sel=1,anim=null;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const W=1000,CX=500,SW=300,SD=150,T=24;
+const wrapText=(s,n)=>{const out=[];let cur='';for(const ch of s){cur+=ch;if(cur.length>=n&&/[，。、；：,.;\s]/.test(ch)){out.push(cur);cur='';}}if(cur)out.push(cur);return out.flatMap(x=>x.length>n+6?[x.slice(0,n+2),x.slice(n+2)]:[x]);};
+function cardLines(items){return items.flatMap(([h])=>['• '+h]);}
+function draw(){
+ const g=20+gap*175;const top=110;const H=top+(L.length-1)*g+SD+T+60;
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ let s='';
+ s+=`<text class="head atk" x="40" y="44">攻击与错误</text><text class="head def" x="${W-40}" y="44" text-anchor="end">防御与分析</text>`;
+ s+=`<text class="flowlab" x="${CX}" y="38" text-anchor="middle">AI 生成内容 ↓ 从上往下流入档案</text>`;
+ const showCards=gap>0.55;const slabs=[];
+ L.forEach((ly,i)=>{
+  const cy=top+i*g+SD/2;
+  const pts=(a)=>a.map(p=>p.join(',')).join(' ');
+  const N=[CX,cy-SD/2],E=[CX+SW/2,cy],S=[CX,cy+SD/2],Wp=[CX-SW/2,cy];
+  // cards
+  if(showCards){
+   const op=Math.min(1,(gap-0.55)/0.35);
+   const mk=(side,items)=>{const lines=cardLines(items);const ch=lines.length*20+38;const cw=250;const x=side==='atk'?30:W-30-cw;const y=cy-ch/2;
+    const dim=view!=='all'&&view!==side?' dim':'';const anchor=side==='atk'?Wp:E;const cxp=side==='atk'?x+cw:x;
+    let c=`<g class="cards${dim}" style="opacity:${op}"><path class="wire ${side}" d="M${cxp},${cy} C${(cxp+anchor[0])/2},${cy} ${(cxp+anchor[0])/2},${anchor[1]} ${anchor[0]+(side==='atk'?-4:4)},${anchor[1]}" marker-end="url(#ar-${side})"/>`;
+    c+=`<g class="card ${side}"><rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="10"/><text class="t" x="${x+14}" y="${y+22}">${side==='atk'?'⚠ 攻击':'✓ 防御'} · 第 ${i+1} 层</text>`;
+    lines.forEach((ln,k)=>c+=`<text class="li" x="${x+14}" y="${y+44+k*20}">${ln}</text>`);
+    return c+'</g></g>';};
+   s+=mk('atk',ly.atk)+mk('def',ly.def.filter(d=>d[0]!=='演示证据'));
+  }
+  // slab (collected, then drawn bottom layer first so upper layers sit on top)
+  slabs.push(`<g class="slab${sel===i?' sel':''}" data-i="${i}" tabindex="0" role="button" aria-label="第 ${i+1} 层：${ly.name}">
+   <polygon class="l" points="${pts([Wp,S,[S[0],S[1]+T],[Wp[0],Wp[1]+T]])}"/><polygon class="r" points="${pts([S,E,[E[0],E[1]+T],[S[0],S[1]+T]])}"/>
+   <polygon class="top" points="${pts([N,E,S,Wp])}"/>
+   <text class="nm" x="${CX}" y="${cy-2}" text-anchor="middle">${i+1} · ${ly.name}</text><text class="sub" x="${CX}" y="${cy+18}" text-anchor="middle">${ly.tech}</text></g>`);
+ });
+ s+=slabs.reverse().join('');
+ svg.innerHTML=`<defs><marker id="ar-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="var(--atk)"/></marker><marker id="ar-def" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10z" fill="var(--def)"/></marker></defs>`+s;
+}
+function render(){draw();
+ const ly=L[sel];document.getElementById('dName').textContent=`第 ${sel+1} 层 · ${ly.name}`;document.getElementById('dTech').textContent=ly.tech;
+ const it=a=>a.map(([h,t])=>`<div class="item"><b>${h}</b><span>${t}</span></div>`).join('');
+ document.getElementById('dAtk').innerHTML=it(ly.atk);document.getElementById('dDef').innerHTML=it(ly.def);}
+svg.addEventListener('click',e=>{const g=e.target.closest('[data-i]');if(g){sel=+g.dataset.i;render();}});
+svg.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const g=e.target.closest('[data-i]');if(g){e.preventDefault();sel=+g.dataset.i;render();svg.querySelector(`[data-i="${sel}"]`)?.focus();}}});
+const range=document.getElementById('gap');
+range.oninput=()=>{cancelAnimationFrame(anim);gap=range.value/100;draw();};
+document.getElementById('explode').onclick=()=>{
+ cancelAnimationFrame(anim);const target=gap>0.5?0:1;const from=gap;const t0=performance.now();const dur=reduce?1:1100;
+ const step=t=>{const k=Math.min(1,(t-t0)/dur);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;gap=from+(target-from)*e;range.value=Math.round(gap*100);draw();if(k<1)anim=requestAnimationFrame(step);else document.getElementById('explode').textContent=gap>0.5?'收拢':'展开爆炸图';};
+ anim=requestAnimationFrame(step);};
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});
+document.getElementById('explode').textContent='收拢';
+render();
+</script>
