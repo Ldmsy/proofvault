@@ -20,39 +20,6 @@ const VERDICT = {
   missing: { label: 'Not on file', cls: 'bg-amber-100 text-amber-800' },
 };
 
-function PatientBanner({ note }) {
-  const p = note.patient;
-  return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-slate-200 bg-white px-4 py-3 sm:px-8">
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
-          {p.name.split(' ').map((w) => w[0]).join('')}
-        </span>
-        <div>
-          <div className="text-lg font-bold leading-tight">{p.name}</div>
-          <div className="text-xs text-slate-500">
-            {p.dob
-              ? `${p.mrn} · ${age(p.dob)} y · ${p.sex === 'F' ? 'Female' : p.sex === 'M' ? 'Male' : p.sex} · DOB ${new Date(p.dob).toLocaleDateString('en-AU')}`
-              : 'Not yet matched to a patient record'}
-          </div>
-        </div>
-      </div>
-      <div className="text-xs">
-        <div className="text-slate-500">Location</div>
-        <div className="font-medium">{p.ward}</div>
-      </div>
-      <div className="text-xs">
-        <div className="text-slate-500">Allergies</div>
-        {p.allergies.length ? (
-          <div className="font-semibold text-red-700">{p.allergies.join(', ')}</div>
-        ) : (
-          <div className="font-medium">None recorded</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Diff({ from, to }) {
   return wordDiff(from, to).map((p, i) =>
     p.type === 'same' ? (
@@ -393,62 +360,84 @@ export default function NoteReview({ note, onBack, onDecide, onUndo, onAsk, onAp
 
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex items-center gap-2 px-4 pt-4 text-sm text-slate-500 sm:px-8">
-        <button onClick={onBack} className="inline-flex items-center gap-1 hover:text-slate-950">
-          <ArrowLeft className="h-4 w-4" /> Worklist
-        </button>
-        <span>/</span>
-        <span className="truncate text-slate-800">{note.type}</span>
-      </div>
-
-      <div className="mt-3">
-        <PatientBanner note={note} />
-      </div>
-
-      {/* Note header + primary action */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{note.type}</h1>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[st].cls}`}>{STATUS[st].label}</span>
-          </div>
-          <p className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-slate-500">
-            <Mic className="h-3 w-3" />{' '}
-            {note.source?.file
-              ? `Imported from ${note.source.file} · reviewed by ${note.source.model || 'Claude'}`
-              : `Drafted by AI scribe from a ${note.scribe.minutes}-min recording · ${author?.name || 'Unknown author'}`}{' '}
-            · {relTime(note.receivedAt)}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {issues.length > 0 && !note.seal && (
-            <div className="text-right text-xs text-slate-500">
-              <div className="font-semibold text-slate-900">
-                {issues.length - open} of {issues.length} issues sorted
-              </div>
-              <div className="mt-1 h-1.5 w-32 overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full rounded-full bg-cyan-600 transition-all" style={{ width: `${((issues.length - open) / issues.length) * 100}%` }} />
-              </div>
-            </div>
-          )}
-          {note.seal ? (
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white">
-              <ShieldCheck className="h-4 w-4" /> Locked
-            </span>
-          ) : (
-            <button
-              disabled={st !== 'ready'}
-              onClick={() => setLockOpen(true)}
-              title={st === 'query' ? 'Waiting on a clinician reply' : open ? 'Sort every issue first' : ''}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-brand-yellow px-4 py-2.5 text-sm font-bold text-slate-950 shadow-[0_3px_0_#d5b800] disabled:opacity-40 disabled:shadow-none"
-            >
-              <Lock className="h-4 w-4" /> Sign & lock
+      {/* Hero: where this note is in its journey, on the hospital wash */}
+      <section className="pv-wash border-b border-slate-200">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:py-8">
+          <div>
+            <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-950">
+              <ArrowLeft className="h-4 w-4" /> Worklist
             </button>
-          )}
+            <div className="pv-kicker mt-4 text-slate-700">
+              {note.type} · {note.patient.name}
+            </div>
+            <h1 className="pv-display mt-3 text-[clamp(34px,4vw,54px)]">
+              {note.seal ? (
+                <>
+                  Checked.
+                  <br />
+                  Signed. <span className="pv-mark">Locked.</span>
+                </>
+              ) : (
+                <>
+                  One note.
+                  <br />
+                  Check it. <span className="pv-mark">Lock it.</span>
+                </>
+              )}
+            </h1>
+            <p className="mt-3 flex flex-wrap items-center gap-1 text-[13px] text-slate-600">
+              <Mic className="h-3.5 w-3.5" />{' '}
+              {note.source?.file
+                ? `Imported from ${note.source.file} · reviewed by ${note.source.model || 'Claude'}`
+                : `Drafted by AI scribe from a ${note.scribe.minutes}-min recording · ${author?.name || 'Unknown author'}`}{' '}
+              · {relTime(note.receivedAt)}
+            </p>
+          </div>
+          <div className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-[0_10px_30px_rgba(20,60,37,0.08)] backdrop-blur">
+            <div className="pv-track">
+              {[
+                ['01 Evidence', true],
+                ['02 Review', st !== 'review' && st !== 'query'],
+                ['03 Confirm', st === 'locked'],
+                ['04 Lock', st === 'locked'],
+              ].map(([label, done], i, all) => {
+                const now = !done && (i === 0 || all[i - 1][1]);
+                return (
+                  <span key={label} className={done ? 'done' : now ? 'now' : ''}>
+                    {label}
+                  </span>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm">
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[st].cls}`}>{STATUS[st].label}</span>
+                {issues.length > 0 && !note.seal && (
+                  <span className="ml-2 text-slate-600">
+                    {issues.length - open} of {issues.length} issues sorted
+                  </span>
+                )}
+              </div>
+              {note.seal ? (
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white">
+                  <ShieldCheck className="h-4 w-4" /> Locked
+                </span>
+              ) : (
+                <button
+                  disabled={st !== 'ready'}
+                  onClick={() => setLockOpen(true)}
+                  title={st === 'query' ? 'Waiting on a clinician reply' : open ? 'Sort every issue first' : ''}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand-yellow px-4 py-2.5 text-sm font-bold text-slate-950 shadow-[0_3px_0_#d5b800] disabled:opacity-40 disabled:shadow-none"
+                >
+                  <Lock className="h-4 w-4" /> Sign & lock
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid flex-1 gap-6 px-4 pb-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_400px]">
         {/* The note */}
         <div className="min-w-0">
           <div className="mb-3 flex gap-1 text-sm">
@@ -462,46 +451,82 @@ export default function NoteReview({ note, onBack, onDecide, onUndo, onAsk, onAp
             ))}
           </div>
           {tab === 'note' ? (
-            <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_10px_25px_rgba(0,0,0,0.03)] sm:p-8">
-              <div className="flex items-center justify-between border-b-2 border-cyan-600 pb-3 text-xs">
-                <strong className="tracking-wider">✚ NORTHSIDE HOSPITAL</strong>
-                <span className="text-slate-500">{note.seal ? `LOCKED · ${note.seal.archiveId}` : 'DRAFT — NOT YET IN RECORD'}</span>
+            <article className="pv-record p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-3 border-b-2 border-cyan-700 pb-3">
+                <strong className="text-[13px] tracking-[0.12em] text-cyan-800">✚ NORTHSIDE HOSPITAL</strong>
+                <span className="text-right text-[10px] uppercase tracking-wider text-cyan-800">Health Information Services</span>
               </div>
-              <div className="mt-5 space-y-5">
-                {note.segments.map((s) => {
+              <h2 className="mt-6 text-2xl font-bold tracking-tight">{note.type}</h2>
+              <dl className="mt-4">
+                <div>
+                  <dt>Patient</dt>
+                  <dd>
+                    {note.patient.name} · {note.patient.mrn}
+                    {note.patient.dob && ` · ${age(note.patient.dob)} ${note.patient.sex}`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Encounter</dt>
+                  <dd>
+                    {note.patient.ward} · {new Date(note.scribe.recordedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Record status</dt>
+                  <dd>{note.seal ? 'Signed review version' : 'Draft — verification pending'}</dd>
+                </div>
+                <div>
+                  <dt>Allergies</dt>
+                  <dd className={note.patient.allergies.length ? 'font-semibold text-red-700' : ''}>{note.patient.allergies.join(', ') || 'None recorded'}</dd>
+                </div>
+              </dl>
+              <div className="mt-6 space-y-3">
+                {note.segments.map((s, idx) => {
                   const flagged = !!s.flag;
                   const resolved = flagged && isResolved(note, s.id);
                   const active = s.id === selected;
+                  const label = `${String(idx + 1).padStart(2, '0')} / ${s.section}`;
                   return (
                     <section key={s.id}>
-                      <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">{s.section}</div>
                       {flagged ? (
                         <button
                           onClick={() => setSelected(s.id)}
-                          className={`w-full rounded-xl px-3 py-2 text-left text-[15px] leading-relaxed transition ${
-                            resolved
-                              ? 'bg-cyan-50 text-slate-900'
-                              : s.flag.type === 'bias'
-                              ? 'bg-orange-50 underline decoration-orange-400 decoration-2 underline-offset-4'
-                              : 'bg-red-50 underline decoration-red-400 decoration-2 underline-offset-4'
-                          } ${active ? 'ring-2 ring-slate-950' : 'hover:ring-1 hover:ring-slate-300'}`}
+                          className={`w-full border-l-[3px] px-4 py-3 text-left transition ${
+                            resolved ? 'border-cyan-600 bg-cyan-50/70' : s.flag.type === 'bias' ? 'border-orange-400 bg-orange-50' : 'border-red-500 bg-red-50'
+                          } ${active ? 'outline outline-2 outline-offset-2 outline-slate-950' : 'hover:bg-opacity-80'}`}
                         >
-                          {resolved ? (
-                            <span className="inline-flex items-start gap-2">
-                              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-cyan-700" /> {finalText(note, s)}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-start gap-2">
-                              <AlertTriangle className={`mt-1 h-4 w-4 shrink-0 ${s.flag.type === 'bias' ? 'text-orange-600' : 'text-red-600'}`} /> {s.text}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                            {label}
+                            {resolved ? (
+                              <span className="inline-flex items-center gap-1 normal-case tracking-normal text-cyan-800">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Sorted
+                              </span>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1 normal-case tracking-normal ${s.flag.type === 'bias' ? 'text-orange-700' : 'text-red-700'}`}>
+                                <AlertTriangle className="h-3.5 w-3.5" /> {s.flag.type === 'bias' ? 'Bias' : 'Check source'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1.5 text-[15px] leading-relaxed">{resolved ? finalText(note, s) : s.text}</p>
                         </button>
                       ) : (
-                        <p className="px-3 text-[15px] leading-relaxed">{s.text}</p>
+                        <div className="px-4 py-2">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</div>
+                          <p className="mt-1.5 text-[15px] leading-relaxed">{s.text}</p>
+                        </div>
                       )}
                     </section>
                   );
                 })}
+              </div>
+              <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-slate-200 pt-4 text-xs">
+                <span>
+                  Clinical confirmation:{' '}
+                  <b>{Object.values(note.queries).some((q) => q.reply) ? `Confirmed by ${author?.name}` : Object.keys(note.queries).length ? 'Requested' : 'Not requested'}</b>
+                </span>
+                <span>
+                  Record integrity: <b>{note.seal ? `Signed · ${note.seal.archiveId}` : 'Not yet signed'}</b>
+                </span>
               </div>
             </article>
           ) : (

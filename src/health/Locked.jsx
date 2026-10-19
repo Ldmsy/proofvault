@@ -45,18 +45,58 @@ export default function Locked() {
   const byId = Object.fromEntries((check?.records || []).map((r) => [r.archiveId, r]));
   const rows = entries ? [...entries].reverse() : [];
 
+  const broken = check && !check.ok;
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Locked records</h1>
-          <p className="mt-1 text-slate-500">Every signed version, chained together. If anyone changes a record later, the check fails.</p>
+    <div>
+      <section className="pv-wash border-b border-slate-200">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:py-10">
+          <div>
+            <div className="pv-kicker text-slate-700">Permanent record · Northside Hospital</div>
+            <h1 className="pv-display mt-5 text-[clamp(40px,5vw,68px)]">
+              A decision.
+              <br />
+              A record.
+              <br />
+              <span className="pv-mark">A trace.</span>
+            </h1>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-slate-600">
+              Every signed version is chained to the one before it. Change a single character and the check fails — here and for every record after it.
+            </p>
+            <button onClick={() => verify()} disabled={busy} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Check integrity
+            </button>
+          </div>
+          {/* Seal: three linked checks — content, signature, chain */}
+          <div className="flex flex-col items-center">
+            <div className={`flex h-64 w-64 items-center justify-center rounded-full border-[3px] bg-white/80 shadow-[0_20px_50px_rgba(128,107,210,0.18)] backdrop-blur transition ${broken ? 'border-red-500' : 'border-[#8b7abe]'} ${busy ? 'animate-pulse' : ''}`}>
+              <div className="text-center">
+                <svg viewBox="0 0 160 50" className="mx-auto w-44">
+                  {[25, 80, 135].map((cx, k) => {
+                    const bad = broken && k === 0;
+                    return (
+                      <g key={cx}>
+                        {k > 0 && <line x1={cx - 37} y1="25" x2={cx - 18} y2="25" stroke={broken ? '#ef4444' : '#8b7abe'} strokeWidth="3" />}
+                        <circle cx={cx} cy="25" r="18" fill="#fff" stroke={broken ? '#ef4444' : '#8b7abe'} strokeWidth="3" />
+                        {bad || broken ? (
+                          <path d={`M${cx - 6} 19 l12 12 M${cx + 6} 19 l-12 12`} stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
+                        ) : (
+                          <path d={`M${cx - 7} 25 l5 5 l10 -10`} fill="none" stroke="#8b7abe" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+                <div className="pv-kicker mt-3 text-[10px] text-slate-500">Content · Signature · Chain</div>
+                <div className={`mt-2 text-sm font-semibold ${broken ? 'text-red-700' : 'text-slate-800'}`}>
+                  {busy ? 'Checking…' : !check ? `${entries?.length ?? '—'} records sealed` : check.ok ? 'All intact' : `Broken at #${check.brokenAt}`}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <button onClick={() => verify()} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Check integrity
-        </button>
-      </div>
+      </section>
 
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
       {check && (
         <div className="mt-5">
           {check.ok ? (
@@ -115,6 +155,7 @@ export default function Locked() {
           );
         })}
       </ul>
+      </div>
     </div>
   );
 }

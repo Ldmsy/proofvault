@@ -1,7 +1,9 @@
-import { ChevronRight, Clock, Mic, AlertTriangle, Inbox, MessageSquareText, Lock, Hourglass } from 'lucide-react';
+import { ChevronRight, Clock, Mic, AlertTriangle } from 'lucide-react';
 import { VeeSays } from '../components/Vee.jsx';
 import { CLINICIANS, ME } from './notes.js';
 import { STATUS, statusOf, openIssues, riskOf, riskRank, age, relTime, dueLabel, pendingQueries } from './model.js';
+
+const WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
 
 const TABS = [
   { key: 'review', label: 'To review' },
@@ -17,20 +19,6 @@ function greeting() {
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-function Stat({ icon: Icon, label, value, tone, onClick }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-400">
-      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
-        <Icon className="h-5 w-5" />
-      </span>
-      <span>
-        <span className="block text-2xl font-bold tabular-nums leading-none">{value}</span>
-        <span className="mt-1 block text-xs text-slate-500">{label}</span>
-      </span>
-    </button>
-  );
-}
-
 export default function Worklist({ notes, tab, setTab, query, onOpen }) {
   const counts = Object.fromEntries(TABS.map((t) => [t.key, notes.filter((n) => statusOf(n) === t.key).length]));
   const overdue = notes.filter((n) => statusOf(n) !== 'locked' && dueLabel(n.dueAt).overdue).length;
@@ -42,21 +30,64 @@ export default function Worklist({ notes, tab, setTab, query, onOpen }) {
   const toReview = counts.review;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
-      <h1 className="text-3xl font-bold tracking-tight">
-        {greeting()}, {ME.name.split(' ')[0]}.
-      </h1>
-      <p className="mt-1 text-slate-500">
-        {toReview ? `${toReview} AI-drafted note${toReview === 1 ? '' : 's'} need${toReview === 1 ? 's' : ''} checking before ${toReview === 1 ? 'it goes' : 'they go'} into the medical record.` : 'Your queue is clear. Nice work.'}
-      </p>
+    <div>
+      {/* Hero: editorial headline + photo, on the hospital wash */}
+      <section className="pv-wash border-b border-slate-200">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:py-10">
+          <div className="flex flex-col justify-center">
+            <div className="pv-kicker text-slate-700">
+              {greeting()}, {ME.name.split(' ')[0]} · {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+            <h1 className="pv-display mt-5 text-[clamp(40px,5vw,68px)]">
+              {toReview ? (
+                <>
+                  {WORDS[toReview] || toReview} note{toReview === 1 ? '' : 's'}.
+                  <br />
+                  One record.
+                  <br />
+                  <span className="pv-mark">No guesswork.</span>
+                </>
+              ) : (
+                <>
+                  Queue clear.
+                  <br />
+                  Every record
+                  <br />
+                  <span className="pv-mark">verified.</span>
+                </>
+              )}
+            </h1>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-slate-600">
+              {toReview
+                ? `${toReview} AI-drafted note${toReview === 1 ? '' : 's'} need${toReview === 1 ? 's' : ''} checking against the recording and the hospital record before ${toReview === 1 ? 'it is' : 'they are'} filed.`
+                : 'Nothing waiting. Every AI-drafted note has been checked and locked.'}
+            </p>
+            <div className="pv-track mt-7">
+              {[
+                ['review', 'To review', counts.review],
+                ['overdue', 'Overdue', overdue],
+                ['query', 'With clinician', counts.query],
+                ['locked', 'Locked', counts.locked],
+              ].map(([key, label, value]) => (
+                <button key={key} onClick={() => setTab(key === 'overdue' ? 'review' : key)} className={`text-left ${key === 'review' ? 'now' : 'done'}`}>
+                  <span className={`block text-2xl font-bold tabular-nums ${key === 'overdue' && value ? 'text-red-700' : 'text-slate-950'}`}>{value}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <figure className="relative hidden min-h-[320px] overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(20,60,37,0.18)] lg:block">
+            <img src="/assets/hospital-team.jpg" alt="A clinician and a records officer reviewing a note together" className="absolute inset-0 h-full w-full object-cover" />
+            <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-6 text-white">
+              <div className="pv-kicker text-white/80">Health Information Services · {ME.org}</div>
+              <div className="mt-2 text-2xl font-bold leading-tight tracking-tight">Every AI note checked before it's filed.</div>
+              <div className="mt-2 text-[10px] text-white/60">AI-generated image</div>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat icon={Inbox} label="To review" value={counts.review} tone="bg-amber-100 text-amber-800" onClick={() => setTab('review')} />
-        <Stat icon={Hourglass} label="Overdue" value={overdue} tone="bg-red-100 text-red-700" onClick={() => setTab('review')} />
-        <Stat icon={MessageSquareText} label="Waiting on clinician" value={counts.query} tone="bg-sky-100 text-sky-800" onClick={() => setTab('query')} />
-        <Stat icon={Lock} label="Locked" value={counts.locked} tone="bg-cyan-100 text-cyan-800" onClick={() => setTab('locked')} />
-      </div>
-
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
       <div className="mt-6 flex gap-1 overflow-x-auto border-b border-slate-200">
         {TABS.map((t) => (
           <button
@@ -134,6 +165,7 @@ export default function Worklist({ notes, tab, setTab, query, onOpen }) {
           })}
         </ul>
       )}
+      </div>
     </div>
   );
 }

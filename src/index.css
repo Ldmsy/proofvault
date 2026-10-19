@@ -34,3 +34,18 @@ body { @apply bg-slate-100 text-slate-900 dark:bg-[#141413] dark:text-slate-100 
 @keyframes vee-wiggle { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-12deg); } }
 .vee-wiggle { animation: vee-wiggle 1.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .vee-bob, .vee-blink, .vee-wiggle { animation: none; } }
+
+/* ProofVault for Health — editorial layer (matches the hospital hand-off pages) */
+.pv-wash { background: linear-gradient(100deg, #f3f7f3f2, #e6efebd9), url('/assets/hospital-corridor.jpg') center/cover fixed; }
+.pv-kicker { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.pv-display { font-weight: 700; letter-spacing: -.045em; line-height: 1.02; }
+.pv-mark { background: linear-gradient(transparent 62%, #ffdc00 62%); }
+.pv-track { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; }
+.pv-track > * { border-top: 3px solid #d6d6cf; padding-top: 8px; font-size: 12px; color: #77766e; }
+.pv-track > .done { border-color: #171717; color: #171717; }
+.pv-track > .now { border-color: #ffdc00; color: #171717; font-weight: 700; }
+.pv-record { background: #fff; border: 1px solid #c8d5cd; box-shadow: 0 8px 30px #143c2512; }
+.pv-record dl { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #dde5df; margin: 0; }
+.pv-record dl > div { padding: 10px 12px; border: 1px solid #e8ede9; }
+.pv-record dt { font-size: 10px; color: #687b6f; text-transform: uppercase; letter-spacing: .05em; }
+.pv-record dd { font-size: 13px; margin: 4px 0 0; }
