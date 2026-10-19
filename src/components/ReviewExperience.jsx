@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { REVIEWERS } from '../data.js';
 import { workingText, RESOLVED, segStatus } from '../lib.js';
 import './ReviewExperience.css';
+import ReviewJourney from './ReviewJourney.jsx';
 
 export default function ReviewExperience({doc,onUpdateRevision,onToggleCheck,onApprove,sealing,reviewerId,setReviewerId,onDetailed,error}) {
  const [index,setIndex]=useState(()=>Math.min(doc.segments.filter(s=>RESOLVED.includes(segStatus(doc,s.id))).length,doc.segments.length));
@@ -13,7 +14,7 @@ export default function ReviewExperience({doc,onUpdateRevision,onToggleCheck,onA
  <div className="ra-note">FICTIONAL BANKING DEMO · No message is sent · Not affiliated with Commonwealth Bank</div>
  <header><a href="/bank.html" className="ra-brand"><i/>Aurelia</a><span>Powered by ProofVault</span><button onClick={onDetailed}>Detailed workspace ↗</button></header>
  <div className="ra-layout"><section className="ra-story">
- <div className="ra-kicker">ONE FILE. ONE REVIEW. A CLEAR NEXT STEP.</div>
+ <div className="ra-kicker">FOLLOW THE FILE · ONE STEP AT A TIME</div>
  <h1>{done?<>A decision.<br/>A record.<br/><em>A trace.</em></>:final?<>Ready to<br/><em>keep this version?</em></>:<>A small claim.<br/><em>A real consequence.</em></>}</h1>
  <p className="ra-lead">{done?'Your reviewed version is signed. Now see what happens when one character changes.':final?'You have handled both findings. Preserve this internal draft before its separate release review.':`You are reviewing a bank’s customer update. ${index===0?'Before saying nobody is affected, check the investigation record.':'Before quoting an endorsement, make sure the source supports it.'}`}</p>
  <div className="ra-track">{['Evidence','Review','Confirm','Seal'].map((s,i)=><span key={s} className={i<=(done?3:final?2:1)?'active':''}>{String(i+1).padStart(2,'0')} {s}</span>)}</div>
@@ -26,6 +27,6 @@ export default function ReviewExperience({doc,onUpdateRevision,onToggleCheck,onA
  {done&&<><div className="ra-kicker">SIGNED REVIEW DRAFT</div><h2>{result?.simulation&&!result.ok?'The change was detected.':'This version has a signature.'}</h2><p>{result?(result.ok?'Stored chain verified intact.':`Verification detected a break at entry #${result.brokenAt}.`):'Try changing a character in a temporary copy.'}</p><button className="ra-main" disabled={checking} onClick={()=>verify(!result?.simulation)}>{checking?'Checking…':result?.simulation?'Verify the original →':'Try a one-character edit →'}</button><p className="ra-small">Simulation only. Your stored record is unchanged.</p><details><summary>View signature details</summary><p className="ra-mono">{doc.seal.archiveId}<br/>SHA-256 {doc.seal.hash}<br/>Ed25519 {doc.seal.signature}</p></details></>}
  {(error||verifyError)&&<p role="alert" className="ra-error">{error||verifyError}</p>}
  </div></section>
- <aside className="ra-preview"><div className="ra-kicker">THE SAME DOCUMENT, THROUGH EVERY STEP</div><div className="ra-stack" aria-hidden="true"><div/><div/><div/></div><article className="ra-paper"><div className="ra-paper-top"><b>Aurelia</b><span>{done?'SIGNED DRAFT':'INTERNAL REVIEW'}</span></div><h2>Customer incident update</h2><p className="ra-small">Communications Lead · Release approval pending</p>{doc.segments.map(s=><p className={RESOLVED.includes(segStatus(doc,s.id))?'ra-resolved':'ra-pending'} key={s.id}>{doc.customRevisions?.[s.id]??s.text}</p>)}<div className="ra-stamp">{done?'✓ REVIEW VERSION SEALED':'NOT APPROVED FOR CUSTOMER RELEASE'}</div></article><div className="ra-context"><strong>{done?'Original + changes + evidence + signature':'Your review travels with the file.'}</strong><p>One document ID. Original wording retained. Every accepted revision recorded.</p><code>{doc.id}</code></div></aside></div>
+ <ReviewJourney stage={done?4:sealing?3:final?2:index} broken={!!result?.simulation&&!result?.ok} docId={doc.id}/></div>
  <footer>Real source checks and signatures. Fictional records. Progress stays in this browser tab; this is not a multi-user approval service.</footer></main>
 }
