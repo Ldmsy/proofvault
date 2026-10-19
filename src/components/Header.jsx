@@ -47,6 +47,12 @@ export default function Header({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <details className="relative text-xs">
+            <summary className="cursor-pointer rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">Demos</summary>
+            <div className="absolute right-0 z-30 mt-2 w-48 rounded-lg border border-slate-200 bg-white p-2 shadow dark:border-slate-700 dark:bg-slate-900">
+              {[['proofchain', 'ProofChain walkthrough'], ['system3d', '3D system cutaway'], ['exploded', 'Threats vs defences']].map(([path, label]) => <a key={path} href={`/${path}.html`} target="_blank" rel="noopener noreferrer" className="block rounded px-2 py-2 hover:bg-slate-100 dark:hover:bg-slate-800">{label}</a>)}
+            </div>
+          </details>
           <button
             type="button"
             onClick={onOpenMap}
