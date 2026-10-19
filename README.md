@@ -45,3 +45,20 @@ npm run dev
 **Upload / Ingest AI Record → File Upload** accepts `.txt`, `.md`, `.html`, `.pdf` and `.docx`. The file is read in the browser, split into paragraphs, and reviewed by Claude Opus 5.5 (`server/recordAnalyze.js`, `api/record-analyze.js`), which returns findings by paragraph number, suggested revisions and the key claims to source-check. The result becomes a new record in the queue with the usual audit, diff, provenance and sign-off tools. Long files are capped at 40 paragraphs / 20,000 characters.
 
 Only newly uploaded files and claims typed into the map's "Trace with Claude Opus 5.5" box call the model; preset records and examples never do.
+
+---
+
+## 🔐 ProofCore Engine — Source Grounding & Signed Seal Ledger
+
+1. **Source-Record Grounding Check (`/api/check-sources`, `server/sourceCheck.js`, `server/records.js`)** — deterministic 7-rule check against the Authoritative Records Register (`match`, `not_found`, `altered`, `superseded`, `number_mismatch`, `unlinked_result`, `unsourced`, `anachronism`) + character-weighted `Grounded / Ungrounded / Conflict` percentages rendered in the right panel (`src/components/GroundingCheck.jsx`).
+2. **Ed25519 Signed Seal Ledger (`/api/seal`, `/api/verify`, `/api/ledger`, `server/ledger.js`)** — real Node `crypto` Ed25519 signatures and append-only SHA-256 hash chain (`prevHash` → `recordHash`), with non-destructive 1-character tamper simulation in the Seal modal.
+3. **Standalone Visual Walkthroughs (Header → `Demos`)**:
+   - `/proofchain.html` — interactive Grounding + Merkle tree + 3-node tamper consensus walkthrough
+   - `/system3d.html` — Three.js 3D 4-layer architecture cutaway (ProofVault UI ↔ API ↔ ProofCore)
+   - `/exploded.html` — 5-layer isometric threats vs. defences view
+4. **CLI & Automated Tests**:
+   ```bash
+   npm run proofcore
+   npm test
+   ```
+

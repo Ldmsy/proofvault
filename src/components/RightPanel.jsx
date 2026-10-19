@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import GroundingCheck from './GroundingCheck.jsx';
 import {
   ScanSearch, Network, ClipboardCheck, Wand2, UserCheck, XCircle, Undo2, ChevronLeft, ChevronRight, BookOpen, Scale,
   FileSearch, Gauge, CheckCircle2, AlertTriangle, ShieldCheck, Stamp, RotateCcw, History, BadgeCheck, Cpu, Hash, KeyRound, Link2, PenLine,
@@ -377,7 +378,7 @@ function GraphTab({ doc, selectedCitationId, setSelectedCitationId, onJump }) {
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
-              <ShieldCheck className="h-3 w-3" /> Signature valid
+              <ShieldCheck className="h-3 w-3" /> Demo metadata
             </span>
           )}
         </div>
@@ -413,7 +414,7 @@ function SignOffTab({ doc, reviewerId, setReviewerId, onToggleCheck, onApprove, 
   const hints = {
     authenticity: openOf('misinfo') ? [false, `${openOf('misinfo')} mis/disinformation finding(s) unresolved`] : [true, 'All factual findings resolved'],
     bias: openOf('bias') ? [false, `${openOf('bias')} bias finding(s) unresolved`] : [true, 'All bias findings resolved'],
-    metadata: [true, 'C2PA manifest valid · model + prompt lineage captured'],
+    metadata: [true, 'Demo C2PA metadata · not cryptographically validated'],
     value: [true, doc.retention],
   };
   const allChecked = CHECKLIST.every((i) => doc.checklist[i.key]);
@@ -514,7 +515,7 @@ function SignOffTab({ doc, reviewerId, setReviewerId, onToggleCheck, onApprove, 
 
       <Card className="p-3">
         <div className="mb-2 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
-          <History className="h-3 w-3" /> Immutable audit trail
+          <History className="h-3 w-3" /> Session activity log
         </div>
         <ol className="space-y-2">
           {[...doc.audit].reverse().map((e, i) => (
@@ -556,6 +557,7 @@ export default function RightPanel(props) {
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3 scroll-thin">
+        <GroundingCheck doc={doc} />
         {tab === 'audit' && <AuditTab {...props} locked={locked} />}
         {tab === 'graph' && <GraphTab {...props} />}
         {tab === 'signoff' && <SignOffTab {...props} />}

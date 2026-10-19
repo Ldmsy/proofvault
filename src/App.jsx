@@ -7,7 +7,7 @@ import RightPanel from './components/RightPanel.jsx';
 import ProvenanceMapOverlay, { MiniProvenanceMap } from './components/ProvenanceMap.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
-import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
+import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -148,25 +148,29 @@ export default function App() {
 
   const approve = async () => {
     setSealing(true);
-    const sealedAt = new Date().toISOString();
-    const hash = await sha256(`${workingText(doc)}\n${doc.c2pa.manifest}\n${sealedAt}`);
-    const signature = (await sha256(hash + reviewer.keyId)) + (await sha256(reviewer.keyId + hash));
-    const seal = {
-      archiveId: `PV-ARC-2026-${doc.id.split('-')[1].toUpperCase()}-${hash.slice(0, 6).toUpperCase()}`,
-      hash,
-      signature,
-      sealedAt,
-      reviewer,
-      storage: 'ProofVault Immutable Archive (WORM) · AU sovereign region, Sydney',
-    };
-    updateDoc(doc.id, (d) => ({
-      ...d,
-      seal,
-      status: 'Approved for Archive',
-      audit: logEvent(d, `Approved & sealed to archive as ${seal.archiveId} · sha256:${hash.slice(0, 16)}…`),
-    }));
-    setSealing(false);
-    setModal('seal');
+    try {
+      const sealedText = workingText(doc);
+      const res = await fetch('/api/seal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: doc.id, title: doc.title, text: sealedText,
+          reviewer: { id: reviewer.id, name: reviewer.name, role: reviewer.role },
+          metadata: { c2paManifest: doc.c2pa.manifest, checklist: doc.checklist } }),
+      });
+      const entry = await res.json();
+      if (!res.ok) throw new Error(entry.error || 'Could not seal record');
+      const seal = { archiveId: entry.archiveId, hash: entry.contentHash, signature: entry.signature,
+        prevHash: entry.prevHash, sealedAt: entry.sealedAt, sealedText,
+        reviewer: { ...reviewer, keyId: entry.keyId },
+        storage: 'ProofCore seal ledger · Ed25519-signed hash chain' };
+      updateDoc(doc.id, (d) => ({ ...d, seal, status: 'Approved for Archive',
+        audit: logEvent(d, `Approved & sealed to archive as ${seal.archiveId} · sha256:${seal.hash.slice(0, 16)}…`) }));
+      setSelectedId(doc.id);
+      setModal('seal');
+    } catch (err) {
+      toast(`Seal failed: ${err.message}`, 'info');
+    } finally {
+      setSealing(false);
+    }
   };
 
   const reject = (reason) => {
