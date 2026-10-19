@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Info, BookOpen, ChevronRight, X } from 'lucide-react';
+import { CheckCircle2, Info } from 'lucide-react';
 import Header from './components/Header.jsx';
 import Queue from './components/Queue.jsx';
 import Viewer from './components/Viewer.jsx';
 import RightPanel from './components/RightPanel.jsx';
 import ProvenanceMapOverlay, { MiniProvenanceMap } from './components/ProvenanceMap.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
-import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS, STORY_ACTS } from './data.js';
-import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED } from './lib.js';
+import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
+import { prepareDoc, provenanceScore, segStatus, sha256, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
 
 const ACTION_TEXT = {
   fix: 'Applied AI-suggested correction to',
@@ -33,11 +33,9 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [ingestCount, setIngestCount] = useState(0);
 
-  // Fullscreen Provenance Map & 4-Act Story Mode
+  // Fullscreen Provenance Map
   const [mapOpen, setMapOpen] = useState(false);
   const [mapIncoming, setMapIncoming] = useState(null);
-  const [storyOpen, setStoryOpen] = useState(true);
-  const [activeActIdx, setActiveActIdx] = useState(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -200,6 +198,17 @@ export default function App() {
     toast(`Ingested via ${sourceLabel} — 1 finding raised by pre-screen`);
   };
 
+  const ingestUpload = async (upload) => {
+    const n = ingestCount + 1;
+    const newDoc = await buildUploadedDoc(upload, n);
+    setIngestCount(n);
+    setDocs((all) => [newDoc, ...all]);
+    selectDoc(newDoc.id);
+    setModal(null);
+    const count = upload.analysis.findings.length;
+    toast(`${upload.fileName} reviewed — ${count} finding${count === 1 ? '' : 's'} raised`);
+  };
+
   const LENS_BY_CATEGORY = { Clinical: 'healthcare', Policy: 'government', Corporate: 'enterprise', Service: 'enterprise' };
   const openMap = (claim, lens) => {
     if (claim) setMapIncoming({ claim, lens, nonce: Date.now() });
@@ -212,18 +221,6 @@ export default function App() {
   const miniSeg =
     flagged.find((s) => s.id === selectedSegId) || flagged.find((s) => !RESOLVED.includes(segStatus(doc, s.id))) || flagged[0];
 
-  const handleSelectStoryAct = (idx) => {
-    setActiveActIdx(idx);
-    const act = STORY_ACTS[idx];
-    if (act.mode === 'map') {
-      openMap(act.claim, act.lens);
-      return;
-    }
-    setMapOpen(false);
-    if (act.docId) selectDoc(act.docId);
-    if (act.segId) setTimeout(() => selectSeg(act.segId), 80);
-    if (act.tab) setTab(act.tab);
-  };
 
   return (
     <div className="flex min-h-screen flex-col lg:h-screen">
@@ -233,55 +230,7 @@ export default function App() {
         onToggleTheme={() => setDark(!dark)}
         onIngest={() => setModal('ingest')}
         onOpenMap={() => openMap()}
-        storyOpen={storyOpen}
-        onToggleStory={() => setStoryOpen(!storyOpen)}
       />
-
-      {/* ──────── Guided 4-Act Story Arc Bar (For Pitching to Mentors & Judges) ──────── */}
-      {storyOpen && (
-        <div className="border-b border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-emerald-500/10 px-5 py-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="mr-1 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                <BookOpen className="h-3.5 w-3.5" /> Pitch Story Arc:
-              </span>
-              {STORY_ACTS.map((s, idx) => {
-                const active = idx === activeActIdx;
-                return (
-                  <span key={s.act} className="inline-flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectStoryAct(idx)}
-                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                        active
-                          ? 'bg-slate-900 text-white shadow dark:bg-white dark:text-slate-950'
-                          : 'bg-white/60 text-slate-700 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <span className="font-mono text-[10.5px] opacity-75">{s.act}:</span> {s.title}
-                    </button>
-                    {idx < STORY_ACTS.length - 1 && <ChevronRight className="h-3.5 w-3.5 text-slate-400" />}
-                  </span>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={() => setStoryOpen(false)}
-              className="rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              title="Hide Story Bar"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
-            <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 font-mono text-[10.5px] font-semibold text-indigo-700 dark:text-indigo-300">
-              {STORY_ACTS[activeActIdx].persona}
-            </span>
-            <span>{STORY_ACTS[activeActIdx].narrative}</span>
-          </div>
-        </div>
-      )}
 
       {/* ──────── Main Workspace: queue + mini map │ record │ audit panels ──────── */}
         <div className="grid flex-1 grid-cols-1 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)_400px]">
@@ -324,7 +273,7 @@ export default function App() {
 
       {mapOpen && <ProvenanceMapOverlay incoming={mapIncoming} onClose={() => setMapOpen(false)} />}
 
-      {modal === 'ingest' && <IngestModal onClose={() => setModal(null)} onIngest={ingest} />}
+      {modal === 'ingest' && <IngestModal onClose={() => setModal(null)} onIngest={ingest} onIngestUpload={ingestUpload} />}
       {modal === 'reject' && <RejectModal doc={doc} onClose={() => setModal(null)} onConfirm={reject} />}
       {modal === 'seal' && doc.seal && <SealModal doc={doc} onClose={() => setModal(null)} />}
 

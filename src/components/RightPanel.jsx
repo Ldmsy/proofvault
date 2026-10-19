@@ -262,6 +262,7 @@ function citStatus(doc, c) {
 
 function GraphTab({ doc, selectedCitationId, setSelectedCitationId, onJump }) {
   const cits = doc.citations;
+  if (!cits.length) return <Card className="p-3 text-xs text-slate-500">No factual claims needing source checks were found in this record.</Card>;
   const sel = cits.find((c) => c.id === selectedCitationId) || cits[0];
   const rowH = 46;
   const H = cits.length * rowH + 16;
@@ -370,9 +371,15 @@ function GraphTab({ doc, selectedCitationId, setSelectedCitationId, onJump }) {
       <Card className="p-3">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">C2PA Content Credentials</div>
-          <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
-            <ShieldCheck className="h-3 w-3" /> Signature valid
-          </span>
+          {doc.c2pa.unsigned ? (
+            <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-3 w-3" /> No credentials
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+              <ShieldCheck className="h-3 w-3" /> Signature valid
+            </span>
+          )}
         </div>
         <dl className="space-y-1.5 text-[11px]">
           {[

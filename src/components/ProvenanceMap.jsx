@@ -203,7 +203,8 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
   }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={`${fill ? 'h-full w-full' : 'w-full'} select-none`}>
+    // The compact thumbnail crops to the four layer bands only.
+    <svg viewBox={compact ? `0 ${ROW_Y[0] - 56} ${W} ${ROW_Y[3] - ROW_Y[0] + 112}` : `0 0 ${W} ${H}`} className={`${fill ? 'h-full w-full' : 'w-full'} select-none`}>
       <defs>
         <filter id="pv-glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" result="b" />
@@ -416,8 +417,8 @@ export function MiniProvenanceMap({ claim, onExpand }) {
 
   return (
     <div className="border-r border-t border-slate-200 bg-white/60 p-3 dark:border-slate-800 dark:bg-slate-950/40">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold">
           <Network className="h-4 w-4 text-indigo-500" /> Provenance Map
         </span>
         <button
@@ -431,21 +432,23 @@ export function MiniProvenanceMap({ claim, onExpand }) {
       <button onClick={onExpand} className="block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 text-left">
         <MapCanvas claim={claim} result={result} step={step} running={running} compact selectedId={null} onSelect={() => {}} />
       </button>
-      <div className="mt-2 space-y-1">
+      <div className="mt-1.5 space-y-1">
         {!claim && <p className="text-[11px] text-slate-500">Select a finding to trace it through the pattern database.</p>}
         {running && (
           <p className="inline-flex items-center gap-1 text-[11px] text-slate-500">
             <Loader2 className="h-3 w-3 animate-spin" /> Tracing the selected finding…
           </p>
         )}
-        {result?.levels.map((l, i) => (
-          <div key={l.chosenId} className={`flex items-center gap-1 text-[11px] transition-opacity ${step >= 2 * i + 1 ? 'opacity-100' : 'opacity-20'}`}>
-            <span className="w-5 font-mono text-slate-400">L{i + 1}</span>
-            <span className="truncate font-medium">{getNode(l.chosenId).label}</span>
+        {result && (
+          <div className="truncate text-[11px] text-slate-500" title={result.levels.map((l) => getNode(l.chosenId).label).join(' › ')}>
+            {result.levels
+              .filter((_, i) => step >= 2 * i + 1)
+              .map((l) => getNode(l.chosenId).label)
+              .join(' › ') || 'Tracing…'}
           </div>
-        ))}
+        )}
         {leaf && (
-          <div className="mt-1 flex items-center justify-between rounded-md px-2 py-1 text-[11px] font-semibold text-white" style={{ background: RISK_META[leaf.risk].color }}>
+          <div className="flex items-center justify-between rounded-md px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: RISK_META[leaf.risk].color }}>
             <span className="truncate">{RISK_META[leaf.risk].label} pattern</span>
             <span className="font-mono">{leaf.cases} cases</span>
           </div>

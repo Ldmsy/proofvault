@@ -125,3 +125,57 @@ export function wordDiff(a, b) {
   while (j < n) push('add', y[j++]);
   return out;
 }
+
+// Builds a queue record from an uploaded file and Claude's paragraph-level review.
+export async function buildUploadedDoc({ fileName, paragraphs, truncated, analysis, model }, n) {
+  const now = new Date().toISOString();
+  const findingAt = new Map(analysis.findings.map((f) => [f.index, f]));
+  const segments = paragraphs.map((text, i) => {
+    const seg = { id: `s${i + 1}`, section: analysis.sections[i] || `Paragraph ${i + 1}`, text };
+    const f = findingAt.get(i + 1);
+    if (f) {
+      const { index, revised, confidence, ...flag } = f;
+      seg.flag = { ...flag, confidence: Math.max(0, Math.min(100, Math.round(confidence))) };
+      seg.revised = revised;
+    }
+    return seg;
+  });
+  const count = analysis.findings.length;
+  const hash = await sha256(paragraphs.join('\n'));
+  const doc = prepareDoc({
+    id: `doc-up${n}-${hash.slice(0, 6)}`,
+    title: analysis.title,
+    category: analysis.category,
+    org: analysis.org,
+    risk: analysis.risk,
+    status: count ? 'Flagged' : 'Pending Review',
+    channel: `Upload · ${fileName}`,
+    ingestedAt: now,
+    owner: 'Uploaded for IM review',
+    retention: 'To be appraised by the records manager',
+    provenanceBase: count ? Math.max(30, 88 - count * 12) : 92,
+    c2pa: {
+      generator: 'Not declared — no Content Credentials in file',
+      model: `Reviewed by ${model || 'Claude Opus 5.5'}`,
+      created: now,
+      hash: `sha256:${hash}`,
+      manifest: 'None attached',
+      signer: '—',
+      action: 'uploaded → reviewed',
+      unsigned: true,
+    },
+    segments,
+    citations: analysis.citations.map((c, i) => ({
+      id: `c${i + 1}`,
+      segId: `s${c.index}`,
+      claim: c.claim,
+      source: c.source || null,
+      status: c.status,
+      note: c.note,
+    })),
+  });
+  if (truncated) {
+    doc.audit.push({ at: now, actor: 'System', text: `Long file: only the first ${paragraphs.length} paragraphs were reviewed` });
+  }
+  return doc;
+}

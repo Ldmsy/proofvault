@@ -2,13 +2,34 @@ import { useEffect, useRef, useState } from 'react';
 import { X, UploadCloud, Plug, Code2, Loader2, CheckCircle2, Stamp, Copy, Download, ShieldCheck, RotateCcw } from 'lucide-react';
 import { Modal } from './ui.jsx';
 import { MCP_CONNECTORS } from '../data.js';
+import { ACCEPTED_TYPES, extractText, toParagraphs } from '../fileText.js';
 
 const STEPS = ['Parsing record & extracting text', 'Validating C2PA manifest & signature', 'Running Opus 5.5 mis/disinformation & bias classifiers', 'Matching claims to source records'];
+const UPLOAD_STEPS = ['Reading file & extracting text', 'Claude Opus 5.5 reviewing each paragraph', 'Building the record & audit trail'];
 
-export function IngestModal({ onClose, onIngest }) {
+// A newly uploaded file is the only ingest path that calls the model.
+async function analyseUpload(file, setStep) {
+  setStep(0);
+  const { paragraphs, truncated } = toParagraphs(await extractText(file));
+  if (!paragraphs.length) throw new Error('No readable text found in this file');
+  setStep(1);
+  const res = await fetch('/api/record-analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: file.name, paragraphs }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Analysis failed (HTTP ${res.status})`);
+  setStep(2);
+  return { fileName: file.name, paragraphs, truncated, analysis: json.analysis, model: json.model };
+}
+
+export function IngestModal({ onClose, onIngest, onIngestUpload }) {
   const [mode, setMode] = useState('mcp');
   const [connector, setConnector] = useState('assistbot');
-  const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState(null);
+  const [error, setError] = useState('');
+  const fileName = file?.name || '';
   const [step, setStep] = useState(-1);
   const timer = useRef(null);
 
@@ -17,7 +38,17 @@ export function IngestModal({ onClose, onIngest }) {
   const sourceLabel = mode === 'mcp' ? MCP_CONNECTORS.find((c) => c.id === connector).name : mode === 'file' ? `Upload · ${fileName}` : 'REST API · POST /v1/records';
   const ready = mode !== 'file' || fileName;
 
-  const start = () => {
+  const start = async () => {
+    setError('');
+    if (mode === 'file') {
+      try {
+        await onIngestUpload(await analyseUpload(file, setStep));
+      } catch (err) {
+        setStep(-1);
+        setError(err.message);
+      }
+      return;
+    }
     setStep(0);
     let s = 0;
     timer.current = setInterval(() => {
@@ -87,8 +118,16 @@ export function IngestModal({ onClose, onIngest }) {
             <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 px-4 py-10 text-center hover:border-indigo-500 dark:border-slate-700">
               <UploadCloud className="h-8 w-8 text-slate-400" />
               <div className="mt-2 text-sm font-medium">{fileName || 'Click to choose a file'}</div>
-              <div className="text-xs text-slate-500">.docx, .pdf, .json, .txt — C2PA manifests read automatically</div>
-              <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files[0]?.name || '')} />
+              <div className="text-xs text-slate-500">.docx, .pdf, .txt, .md, .html — reviewed paragraph by paragraph by Claude Opus 5.5</div>
+              <input
+                type="file"
+                accept={ACCEPTED_TYPES}
+                className="hidden"
+                onChange={(e) => {
+                  setFile(e.target.files[0] || null);
+                  setError('');
+                }}
+              />
             </label>
           )}
 
@@ -107,6 +146,8 @@ export function IngestModal({ onClose, onIngest }) {
             </pre>
           )}
 
+          {error && <div className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">{error}</div>}
+
           <button
             disabled={!ready}
             onClick={start}
@@ -117,7 +158,7 @@ export function IngestModal({ onClose, onIngest }) {
         </div>
       ) : (
         <div className="space-y-3 p-5">
-          {STEPS.map((s, i) => (
+          {(mode === 'file' ? UPLOAD_STEPS : STEPS).map((s, i) => (
             <div key={s} className={`flex items-center gap-3 text-sm ${i > step ? 'text-slate-400' : ''}`}>
               {i < step ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />

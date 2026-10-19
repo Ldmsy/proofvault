@@ -1,7 +1,8 @@
-// Local backend: mounts the Provenance Map endpoint on the Vite dev and preview servers.
+// Local backend: mounts the Provenance Map and upload-analysis endpoints on the Vite dev and preview servers.
 import { handleTaxonomyMatch } from './taxonomyMatch.js';
+import { handleRecordAnalyze } from './recordAnalyze.js';
 
-const ROUTES = { '/api/taxonomy-match': handleTaxonomyMatch };
+const ROUTES = { '/api/taxonomy-match': handleTaxonomyMatch, '/api/record-analyze': handleRecordAnalyze };
 
 const MAX_BODY_BYTES = 1024 * 1024;
 
