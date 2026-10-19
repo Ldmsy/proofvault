@@ -72,7 +72,10 @@ function buildLevels(text, path) {
 
 const traceCache = new Map();
 
-function traceClaimCached(text) {
+// Only new content a user submits goes to the model; preset claims and existing records use the
+// built-in matcher, so browsing the app never spends API credit.
+function traceClaimCached(text, live) {
+  if (!live) return Promise.resolve({ levels: localMatch(text), source: 'local', summary: null });
   if (!traceCache.has(text)) {
     const p = traceClaim(text);
     traceCache.set(text, p);
@@ -354,7 +357,7 @@ function MapCanvas({ claim, result, step, selectedId, onSelect, running, compact
 /* ───────────────────────── Trace state ───────────────────────── */
 
 // Runs the trace for a claim and steps the layer-by-layer reveal forward.
-function useTrace(claim) {
+function useTrace(claim, live = false) {
   const [result, setResult] = useState(null);
   const [step, setStep] = useState(0);
   const [running, setRunning] = useState(false);
@@ -366,7 +369,7 @@ function useTrace(claim) {
     setResult(null);
     setStep(0);
     setRunning(true);
-    traceClaimCached(claim).then((r) => {
+    traceClaimCached(claim, live).then((r) => {
       if (cancelled) return;
       setRunning(false);
       setResult(r);
@@ -374,7 +377,7 @@ function useTrace(claim) {
     return () => {
       cancelled = true;
     };
-  }, [claim, nonce]);
+  }, [claim, live, nonce]);
 
   const depth = result?.levels.length ?? 0;
   const maxStep = result ? 2 * depth - 1 + (depth < LAYER_NAMES.length ? 1 : 0) : 0;
@@ -461,12 +464,16 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
   const [draft, setDraft] = useState('');
   const [claimsOpen, setClaimsOpen] = useState(false);
   const [cardOpen, setCardOpen] = useState(true);
-  const { result, step, running, finished, replay } = useTrace(claim);
+  const [live, setLive] = useState(false); // true only for a claim the user typed in
+  const { result, step, running, finished, replay } = useTrace(claim, live);
 
   useEffect(() => {
     if (!incoming) return;
     if (incoming.lens) setLens(incoming.lens);
-    if (incoming.claim) setClaim(incoming.claim);
+    if (incoming.claim) {
+      setLive(false);
+      setClaim(incoming.claim);
+    }
   }, [incoming?.nonce]);
 
   useEffect(() => {
@@ -475,9 +482,10 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const trace = (text) => {
+  const trace = (text, isNew = false) => {
     setClaimsOpen(false);
     setCardOpen(true);
+    setLive(isNew);
     if (text === claim) replay();
     else setClaim(text);
   };
@@ -550,7 +558,7 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
             />
             <button
               disabled={!draft.trim() || running}
-              onClick={() => trace(draft.trim())}
+              onClick={() => trace(draft.trim(), true)}
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 py-1.5 text-[11.5px] font-semibold text-white disabled:opacity-40"
             >
               <Sparkles className="h-3.5 w-3.5" /> Trace with Claude Opus 5.5
