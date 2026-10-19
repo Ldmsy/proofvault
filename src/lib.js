@@ -179,3 +179,29 @@ export async function buildUploadedDoc({ fileName, paragraphs, truncated, analys
   }
   return doc;
 }
+
+// Locks the original AI draft in the signed seal ledger the moment it is generated, so any later
+// change to it can be detected. Human sign-off seals the reviewed version as a second entry.
+export async function lockOriginalDraft({ docId, title, paragraphs, fileName, model }) {
+  try {
+    const res = await fetch('/api/seal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        docId: `${docId}#v1.0`,
+        title: `${title} — original AI draft`,
+        text: paragraphs.join('\n'),
+        reviewer: { id: 'intake', name: 'ProofVault Intake', role: 'Automatic lock on ingest' },
+        metadata: { stage: 'ingest', fileName, reviewedBy: model || null },
+      }),
+    });
+    const entry = await res.json();
+    if (!res.ok) throw new Error(entry.error || `HTTP ${res.status}`);
+    return {
+      originalSeal: { archiveId: entry.archiveId, hash: entry.contentHash, sealedAt: entry.sealedAt },
+      event: `Original AI draft locked as ${entry.archiveId} · sha256:${entry.contentHash.slice(0, 16)}…`,
+    };
+  } catch (err) {
+    return { originalSeal: null, event: `Original AI draft could not be locked (${err.message})` };
+  }
+}

@@ -8,7 +8,7 @@ import RightPanel from './components/RightPanel.jsx';
 import ProvenanceMapOverlay, { MiniProvenanceMap } from './components/ProvenanceMap.jsx';
 import { IngestModal, RejectModal, SealModal } from './components/Modals.jsx';
 import { INITIAL_DOCS, INGEST_TEMPLATE, BASE_METRICS, REVIEWERS } from './data.js';
-import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc } from './lib.js';
+import { prepareDoc, provenanceScore, segStatus, workingText, RESOLVED, buildUploadedDoc, lockOriginalDraft } from './lib.js';
 
 import { readBankHandoff, HANDOFF_KEY } from './handoff.js';
 import Vee from './components/Vee.jsx';
@@ -212,36 +212,10 @@ export default function App() {
     toast(`Ingested via ${sourceLabel} — 1 finding raised by pre-screen`);
   };
 
-  // Locks the original AI draft in the signed seal ledger the moment it is generated, so any later
-  // change to it can be detected. Human sign-off seals the reviewed version as a second entry.
-  const lockOriginal = async (newDoc, upload) => {
-    try {
-      const res = await fetch('/api/seal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          docId: `${newDoc.id}#v1.0`,
-          title: `${newDoc.title} — original AI draft`,
-          text: upload.paragraphs.join('\n'),
-          reviewer: { id: 'intake', name: 'ProofVault Intake', role: 'Automatic lock on ingest' },
-          metadata: { stage: 'ingest', fileName: upload.fileName, reviewedBy: upload.model || null },
-        }),
-      });
-      const entry = await res.json();
-      if (!res.ok) throw new Error(entry.error || `HTTP ${res.status}`);
-      return {
-        originalSeal: { archiveId: entry.archiveId, hash: entry.contentHash, sealedAt: entry.sealedAt },
-        event: `Original AI draft locked as ${entry.archiveId} · sha256:${entry.contentHash.slice(0, 16)}…`,
-      };
-    } catch (err) {
-      return { originalSeal: null, event: `Original AI draft could not be locked (${err.message})` };
-    }
-  };
-
   const ingestUpload = async (upload) => {
     const n = ingestCount + 1;
     const built = await buildUploadedDoc(upload, n);
-    const { originalSeal, event } = await lockOriginal(built, upload);
+    const { originalSeal, event } = await lockOriginalDraft({ docId: built.id, title: built.title, paragraphs: upload.paragraphs, fileName: upload.fileName, model: upload.model });
     const newDoc = { ...built, originalSeal, audit: [...built.audit, { at: new Date().toISOString(), actor: 'ProofCore Ledger', text: event }] };
     setIngestCount(n);
     setDocs((all) => [newDoc, ...all]);

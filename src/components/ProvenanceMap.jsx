@@ -462,7 +462,9 @@ export function MiniProvenanceMap({ claim, onExpand }) {
 
 /* ───────────────────────── Fullscreen map ───────────────────────── */
 
-export default function ProvenanceMapOverlay({ incoming, onClose }) {
+// lenses: restrict which lenses can be picked (e.g. ['healthcare'] in the hospital product).
+export default function ProvenanceMapOverlay({ incoming, onClose, lenses }) {
+  const available = lenses ? LENSES.filter((l) => lenses.includes(l.key)) : LENSES;
   const [lens, setLens] = useState(incoming?.lens || 'personal');
   const [claim, setClaim] = useState(incoming?.claim || LENSES[0].presets[0]);
   const [draft, setDraft] = useState('');
@@ -530,7 +532,7 @@ export default function ProvenanceMapOverlay({ incoming, onClose }) {
         {claimsOpen && (
           <div className={`animate-pop mb-2 space-y-2.5 p-3 ${floating}`}>
             <div className="grid grid-cols-4 gap-1">
-              {LENSES.map(({ key, label, icon: Icon }) => (
+              {available.length > 1 && available.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setLens(key)}

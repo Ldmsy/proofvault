@@ -4,6 +4,20 @@
 
 ---
 
+## ProofVault for Health (default view)
+
+Opening the app signs you in as **Priya Natarajan, Health Information Manager at Northside Hospital** — the person who checks every AI-scribed note before it enters the permanent medical record.
+
+- **Worklist** — AI-drafted notes sorted by risk and due time, with tabs for *To review · Waiting on clinician · Ready to lock · Locked*.
+- **Note review** — patient banner (MRN, age, allergies); the note with problem paragraphs highlighted; for each issue, the evidence (recording snippet with timestamp, linked hospital records), the known pattern it matches, and a suggested correction. Accept, edit, keep, or **ask the clinician** — the reply lands in the thread and the bell.
+- **Sign & lock** — three plain-language checks and a typed signature; the final note is sealed into the Ed25519-signed ledger.
+- **Locked records** — every sealed version with a one-click integrity check and a tamper simulation.
+- **Import AI note** — upload a file; Claude reviews it paragraph by paragraph and the original draft is locked on arrival.
+
+The earlier multi-sector workspace is still available at `/?classic`; the hospital and banking hand-off flows at `/hospital.html` and `/bank.html`.
+
+---
+
 ## The idea
 
 AI-generated content rarely looks blatantly fake. A post, a policy draft or a clinical note reads calmly — but underneath it may rest on a known misinformation, disinformation or bias pattern. ProofVault does two things:

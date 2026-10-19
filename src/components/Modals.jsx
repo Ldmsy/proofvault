@@ -25,8 +25,9 @@ async function analyseUpload(file, setStep) {
   return { fileName: file.name, paragraphs, truncated, analysis: json.analysis, model: json.model };
 }
 
-export function IngestModal({ onClose, onIngest, onIngestUpload }) {
-  const [mode, setMode] = useState('mcp');
+// fileOnly: the hospital product only imports files, so the connector / API tabs are hidden.
+export function IngestModal({ onClose, onIngest, onIngestUpload, fileOnly = false }) {
+  const [mode, setMode] = useState(fileOnly ? 'file' : 'mcp');
   const [connector, setConnector] = useState('assistbot');
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
@@ -81,7 +82,7 @@ export function IngestModal({ onClose, onIngest, onIngestUpload }) {
 
       {step < 0 ? (
         <div className="p-5">
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <div className={`grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800 ${fileOnly ? 'hidden' : ''}`}>
             {[
               ['mcp', 'MCP Connector', Plug],
               ['file', 'File Upload', UploadCloud],
